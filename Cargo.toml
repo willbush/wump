@@ -1,0 +1,6 @@
+[package]
+name = "hunt-the-wumpus-rust"
+version = "0.1.0"
+authors = ["willbush <will.g.bush@gmail.com>"]
+
+[dependencies]
