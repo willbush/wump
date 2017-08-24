@@ -1,3 +1,8 @@
+#![cfg_attr(test, feature(plugin))]
+#![cfg_attr(test, plugin(quickcheck_macros))]
+#[cfg(test)]
+extern crate quickcheck;
+
 use std::io;
 
 // The game map in Hunt the Wumpus is laid out as a dodecahedron. The vertices
@@ -182,17 +187,21 @@ mod game_tests {
         }
     }
 
-    #[test]
-    fn can_move_test() {
-        assert!(can_move(1, 2));
-        assert!(can_move(2, 3));
-        assert!(can_move(2, 3));
-        assert!(can_move(20, 13));
+    // if current room is in bounds of the map and strictly less than the map length,
+    // then we should always be able to move to the room (current + 1).
+    #[quickcheck]
+    fn can_move_to_next_room_num_prop(current: RoomNum) -> bool {
+        if current > 0 && current < MAP.len() {
+            let adj_rooms = MAP[current - 1];
+            let adj1 = adj_rooms[0];
+            let adj2 = adj_rooms[1];
+            let adj3 = adj_rooms[2];
 
-        assert!(!can_move(20, 1));
-        assert!(!can_move(1, 20));
-        assert!(!can_move(300, 20));
-        assert!(!can_move(1, 200));
+            let next = current + 1;
+            next == adj1 || next == adj2 || next == adj3
+        } else {
+            can_move(current, current + 1) == false
+        }
     }
 
     #[test]
