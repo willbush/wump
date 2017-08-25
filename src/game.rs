@@ -51,9 +51,7 @@ pub type RoomNum = usize;
 #[derive(Debug, PartialEq)]
 pub enum Action {
     Move(RoomNum),
-    Shoot(RoomNum),
-    Quit,
-    None,
+    Quit
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -101,11 +99,9 @@ impl Game {
             };
             let action = self.action_provider.next(&game_state);
             match action {
-                Action::Move(next_room) => if can_move(room_num, next_room) {
-                    room_num = next_room;
-                },
+                Action::Move(next_room) if can_move(room_num, next_room) => room_num = next_room,
                 Action::Quit => break,
-                _ => break,
+                _ => panic!("illegal action state"),
             }
             turn += 1;
         }
@@ -138,7 +134,7 @@ mod game_tests {
 
             match self.actions.pop() {
                 Some(action) => action,
-                None => Action::None,
+                None => panic!("too many pops"),
             }
         }
     }
@@ -158,15 +154,13 @@ mod game_tests {
 
     #[test]
     fn can_move_and_quit() {
-        let starting_room = 1;
-        // move to room 20 is not possible from room 3.
         let actions = vec![
             Action::Quit,
-            Action::Move(20),
+            Action::Move(12),
             Action::Move(3),
             Action::Move(2),
         ];
-        let expected_states = create_expected_game_states(vec![1, 2, 3, 3]);
+        let expected_states = create_expected_game_states(vec![1, 2, 3, 12]);
         let initial_state = expected_states[0].clone();
 
         let provider = Box::new(ActionProviderSpy::new(actions, expected_states));

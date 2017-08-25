@@ -24,7 +24,7 @@ struct PlayerActionProvider;
 
 impl ActionProvider for PlayerActionProvider {
     fn next(&mut self, game_state: &GameState) -> Action {
-        let mut room_num = game_state.player_room;
+        let room_num = game_state.player_room;
         loop {
             println!("You are in room {}", room_num);
             let (a, b, c) = game::adj_rooms_to(room_num);
@@ -37,7 +37,6 @@ impl ActionProvider for PlayerActionProvider {
                 _ => continue,
             }
         }
-        Action::Quit
     }
 }
 
