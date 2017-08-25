@@ -2,54 +2,73 @@
 #![cfg_attr(test, plugin(quickcheck_macros))]
 #[cfg(test)]
 extern crate quickcheck;
+extern crate rand;
 
 mod game;
 
+use rand::{thread_rng, Rng};
 use std::io;
+use std::io::Write;
 use game::*;
 
 fn main() {
-    let mut room_num = 1;
-    loop {
-        println!("You are in room {}", room_num);
-        println!("Shoot, Move, or Quit (S, M, Q)");
+    let mut rng = thread_rng();
+    let player_room: usize = rng.gen_range(1, MAP.len() + 1);
 
-        match read_sanitized_line().as_ref() {
-            "M" => {
-                room_num = move_player(room_num);
+    let initial_state = GameState::new(player_room);
+    let mut game = Game::new(initial_state, Box::new(PlayerActionProvider));
+    game.run();
+}
+
+struct PlayerActionProvider;
+
+impl ActionProvider for PlayerActionProvider {
+    fn next(&mut self, game_state: &GameState) -> Action {
+        let mut room_num = game_state.player_room;
+        loop {
+            println!("You are in room {}", room_num);
+            let (a, b, c) = game::adj_rooms_to(room_num);
+            println!("Tunnel leads to {} {} {}", a, b, c);
+            print("Shoot, Move, or Quit (S, M, Q) ");
+
+            match read_sanitized_line().as_ref() {
+                "M" => return Action::Move(get_adj_room_to(room_num)),
+                "Q" => return Action::Quit,
+                _ => continue,
             }
-            "Q" => break,
-            _ => continue,
         }
+        Action::Quit
     }
 }
 
-fn move_player(room_num: RoomNum) -> RoomNum {
-    let adj_rooms = MAP[room_num - 1];
-    let adj1 = adj_rooms[0];
-    let adj2 = adj_rooms[1];
-    let adj3 = adj_rooms[2];
-    println!("You are in room {}", room_num);
-    println!("Tunnels leads to {} {} {}", adj1, adj2, adj3);
+fn get_adj_room_to(room: RoomNum) -> RoomNum {
+    print("Where to? ");
 
     loop {
         let input = read_sanitized_line();
+
         match input.parse::<RoomNum>() {
-            Ok(n) => if n == adj1 || n == adj2 || n == adj3 {
-                return n;
-            } else {
-                println!("Not Possible - Where to?");
-            },
-            Err(_) => println!("Not Possible - Where to?"),
+            Ok(next) if game::can_move(room, next) => return next,
+            _ => print("Not Possible - Where to? "),
         }
     }
 }
 
 // Reads a line from stdin, trims it, and returns it as upper case.
 fn read_sanitized_line() -> String {
+    read_trimed_line().to_uppercase()
+}
+
+fn read_trimed_line() -> String {
     let mut input = String::new();
     io::stdin()
         .read_line(&mut input)
         .expect("Failed to read line.");
-    input.trim().to_uppercase()
+    input.trim().to_string()
+}
+
+// Print without new line and flush to force it to show up.
+fn print(s: &str) {
+    print!("{}", s);
+    io::stdout().flush().unwrap();
 }

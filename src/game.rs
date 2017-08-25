@@ -28,7 +28,7 @@ pub static MAP: [[RoomNum; 3]; 20] = [
     [13, 16, 19],
 ];
 
-fn can_move(next: RoomNum, current: RoomNum) -> bool {
+pub fn can_move(next: RoomNum, current: RoomNum) -> bool {
     if current > 0 && current <= MAP.len() {
         let adj_rooms = MAP[current - 1];
         let adj1 = adj_rooms[0];
@@ -41,6 +41,11 @@ fn can_move(next: RoomNum, current: RoomNum) -> bool {
     }
 }
 
+pub fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
+    let adj_rooms = MAP[room - 1];
+    (adj_rooms[0], adj_rooms[1], adj_rooms[2])
+}
+
 pub type RoomNum = usize;
 
 #[derive(Debug, PartialEq)]
@@ -51,12 +56,21 @@ pub enum Action {
     None,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct GameState {
     // The game turn starting from 0. Each player turn increments this by one.
     turn: usize,
     // the current room number the player is in.
-    player_room: RoomNum,
+    pub player_room: RoomNum,
+}
+
+impl GameState {
+    pub fn new(player_room: RoomNum) -> GameState {
+        GameState {
+            turn: 0,
+            player_room: player_room,
+        }
+    }
 }
 
 pub trait ActionProvider {
@@ -64,28 +78,23 @@ pub trait ActionProvider {
 }
 
 pub struct Game {
-    starting_room: RoomNum,
+    state: GameState,
     action_provider: Box<ActionProvider>,
 }
 
 impl Game {
-    fn new(starting_room: RoomNum, ap: Box<ActionProvider>) -> Game {
+    pub fn new(initial_state: GameState, ap: Box<ActionProvider>) -> Game {
         Game {
-            starting_room: starting_room,
+            state: initial_state,
             action_provider: ap,
         }
     }
 
-    fn run(&mut self) {
-        let mut room_num = self.starting_room;
-
-        let mut turn = 0;
+    pub fn run(&mut self) {
+        let mut room_num = self.state.player_room;
+        let mut turn = self.state.turn;
 
         loop {
-            println!("You are in room {}", room_num);
-            println!("Shoot, Move, or Quit (S, M, Q)");
-
-
             let game_state = GameState {
                 turn: turn,
                 player_room: room_num,
@@ -96,7 +105,7 @@ impl Game {
                     room_num = next_room;
                 },
                 Action::Quit => break,
-                _ => continue,
+                _ => break,
             }
             turn += 1;
         }
@@ -158,10 +167,11 @@ mod game_tests {
             Action::Move(2),
         ];
         let expected_states = create_expected_game_states(vec![1, 2, 3, 3]);
+        let initial_state = expected_states[0].clone();
 
         let provider = Box::new(ActionProviderSpy::new(actions, expected_states));
 
-        let mut game = Game::new(starting_room, provider);
+        let mut game = Game::new(initial_state, provider);
 
         game.run();
     }
