@@ -1,3 +1,6 @@
+use std::fmt;
+use std::collections::HashSet;
+
 // The game map in Hunt the Wumpus is laid out as a dodecahedron. The vertices
 // of the dodecahedron are considered rooms, and each room has 3 adjacent rooms.
 // A room is adjacent if it has a line segment directly from one vertex to
@@ -51,22 +54,25 @@ pub type RoomNum = usize;
 #[derive(Debug, PartialEq)]
 pub enum Action {
     Move(RoomNum),
-    Quit
+    Quit,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct GameState {
     // The game turn starting from 0. Each player turn increments this by one.
     turn: usize,
-    // the current room number the player is in.
     pub player_room: RoomNum,
+    pub pit1_room: RoomNum,
+    pub pit2_room: RoomNum,
 }
 
 impl GameState {
-    pub fn new(player_room: RoomNum) -> GameState {
+    pub fn new(player_room: RoomNum, pit1: RoomNum, pit2: RoomNum) -> Self {
         GameState {
             turn: 0,
             player_room: player_room,
+            pit1_room: pit1,
+            pit2_room: pit2,
         }
     }
 }
@@ -75,27 +81,49 @@ pub trait ActionProvider {
     fn next(&mut self, game_state: &GameState) -> Action;
 }
 
+
+#[derive(PartialEq, Debug)]
+pub enum GameErr {
+    NonUniqueSpawnLocations,
+}
+
+type GameResult = Result<Game, GameErr>;
+
 pub struct Game {
     state: GameState,
     action_provider: Box<ActionProvider>,
 }
 
 impl Game {
-    pub fn new(initial_state: GameState, ap: Box<ActionProvider>) -> Game {
-        Game {
-            state: initial_state,
-            action_provider: ap,
+    pub fn new(initial_state: GameState, ap: Box<ActionProvider>) -> GameResult {
+        let mut rooms = HashSet::new();
+        rooms.insert(initial_state.player_room);
+        rooms.insert(initial_state.pit1_room);
+        rooms.insert(initial_state.pit2_room);
+        let expected_unique_room_count = 3;
+
+        if rooms.len() != expected_unique_room_count {
+            Err(GameErr::NonUniqueSpawnLocations)
+        } else {
+            Ok(Game {
+                state: initial_state,
+                action_provider: ap,
+            })
         }
     }
 
     pub fn run(&mut self) {
         let mut room_num = self.state.player_room;
         let mut turn = self.state.turn;
+        let pit1_room = self.state.pit1_room;
+        let pit2_room = self.state.pit2_room;
 
         loop {
             let game_state = GameState {
                 turn: turn,
                 player_room: room_num,
+                pit1_room: pit1_room,
+                pit2_room: pit2_room,
             };
             let action = self.action_provider.next(&game_state);
             match action {
@@ -108,9 +136,42 @@ impl Game {
     }
 }
 
+impl PartialEq for Game {
+    fn eq(&self, other: &Game) -> bool {
+        self.state == other.state
+    }
+}
+
+impl fmt::Debug for Game {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let turn = self.state.turn;
+        let player = self.state.player_room;
+        let pit1 = self.state.pit1_room;
+        let pit2 = self.state.pit2_room;
+
+        write!(
+            f,
+            "GameState {{ turn: {} player: {} pit1: {} pit2: {} }}",
+            turn,
+            player,
+            pit1,
+            pit2
+        )
+    }
+}
+
 #[cfg(test)]
 mod game_tests {
     use super::*;
+
+    #[derive(Debug, PartialEq)]
+    struct ActionProviderDummy;
+
+    impl ActionProvider for ActionProviderDummy {
+        fn next(&mut self, _: &GameState) -> Action {
+            Action::Quit
+        }
+    }
 
     struct ActionProviderSpy {
         actions: Vec<Action>,
@@ -139,10 +200,11 @@ mod game_tests {
         }
     }
 
-    // if current room is in bounds of the map and strictly less than the map length,
-    // then we should always be able to move to the room (current + 1).
+    // One property that exists for the map is if current room is in bounds of
+    // the map and strictly less than the map length, then we should always be
+    // able to move to the room (current + 1).
     #[quickcheck]
-    fn can_move_to_next_room_num_prop(current: RoomNum) -> bool {
+    fn can_move_to_next_room_num_property(current: RoomNum) -> bool {
         let can_move = can_move(current, current + 1);
 
         if current > 0 && current < MAP.len() {
@@ -160,22 +222,42 @@ mod game_tests {
             Action::Move(3),
             Action::Move(2),
         ];
-        let expected_states = create_expected_game_states(vec![1, 2, 3, 12]);
+        let expected_states = create_expected_game_states(vec![1, 2, 3, 12], 19, 20);
         let initial_state = expected_states[0].clone();
 
         let provider = Box::new(ActionProviderSpy::new(actions, expected_states));
 
-        let mut game = Game::new(initial_state, provider);
-
-        game.run();
+        match Game::new(initial_state, provider) {
+            Ok(mut game) => game.run(),
+            Err(e) => panic!("{:?}", e),
+        }
     }
 
-    fn create_expected_game_states(rooms: Vec<RoomNum>) -> Vec<GameState> {
+    #[test]
+    fn initial_state_with_non_unique_spawns_causes_err() {
+        assert_state_has_game_result(GameState::new(1, 2, 2), Err(GameErr::NonUniqueSpawnLocations));
+        assert_state_has_game_result(GameState::new(2, 2, 1), Err(GameErr::NonUniqueSpawnLocations));
+        assert_state_has_game_result(GameState::new(2, 1, 2), Err(GameErr::NonUniqueSpawnLocations));
+    }
+
+    fn assert_state_has_game_result(initial_state: GameState, result: GameResult) {
+        let game = Game::new(initial_state, Box::new(ActionProviderDummy));
+
+        assert_eq!(result, game);
+    }
+
+    fn create_expected_game_states(
+        rooms: Vec<RoomNum>,
+        pit1: RoomNum,
+        pit2: RoomNum,
+    ) -> Vec<GameState> {
         let mut result = Vec::new();
         for (i, room) in rooms.iter().enumerate() {
             result.push(GameState {
                 turn: i,
                 player_room: *room,
+                pit1_room: pit1,
+                pit2_room: pit2,
             });
         }
         result

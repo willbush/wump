@@ -13,11 +13,16 @@ use game::*;
 
 fn main() {
     let mut rng = thread_rng();
-    let player_room: usize = rng.gen_range(1, MAP.len() + 1);
+    let player_room: RoomNum = rng.gen_range(1, MAP.len() + 1);
+    let pit1_room = 19;
+    let pit2_room = 20;
 
-    let initial_state = GameState::new(player_room);
-    let mut game = Game::new(initial_state, Box::new(PlayerActionProvider));
-    game.run();
+    let initial_state = GameState::new(player_room, pit1_room, pit2_room);
+
+    match Game::new(initial_state, Box::new(PlayerActionProvider)) {
+        Ok(mut game) => game.run(),
+        Err(e) => panic!("{:?}", e),
+    }
 }
 
 struct PlayerActionProvider;
