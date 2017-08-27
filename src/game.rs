@@ -57,28 +57,29 @@ pub enum Action {
     Quit,
 }
 
+/// Position of game entities
 #[derive(Clone, PartialEq, Debug)]
-pub struct GameState {
+pub struct Pos {
     // The game turn starting from 0. Each player turn increments this by one.
     turn: usize,
-    pub player_room: RoomNum,
-    pub pit1_room: RoomNum,
-    pub pit2_room: RoomNum,
+    pub player: RoomNum,
+    pub pit1: RoomNum,
+    pub pit2: RoomNum,
 }
 
-impl GameState {
-    pub fn new(player_room: RoomNum, pit1: RoomNum, pit2: RoomNum) -> Self {
-        GameState {
+impl Pos {
+    pub fn new(player: RoomNum, pit1: RoomNum, pit2: RoomNum) -> Self {
+        Pos {
             turn: 0,
-            player_room: player_room,
-            pit1_room: pit1,
-            pit2_room: pit2,
+            player: player,
+            pit1: pit1,
+            pit2: pit2,
         }
     }
 }
 
 pub trait ActionProvider {
-    fn next(&mut self, game_state: &GameState) -> Action;
+    fn next(&mut self, positions: &Pos) -> Action;
 }
 
 
@@ -90,42 +91,42 @@ pub enum GameErr {
 type GameResult = Result<Game, GameErr>;
 
 pub struct Game {
-    state: GameState,
+    positions: Pos,
     action_provider: Box<ActionProvider>,
 }
 
 impl Game {
-    pub fn new(initial_state: GameState, ap: Box<ActionProvider>) -> GameResult {
+    pub fn new(positions: Pos, ap: Box<ActionProvider>) -> GameResult {
         let mut rooms = HashSet::new();
-        rooms.insert(initial_state.player_room);
-        rooms.insert(initial_state.pit1_room);
-        rooms.insert(initial_state.pit2_room);
+        rooms.insert(positions.player);
+        rooms.insert(positions.pit1);
+        rooms.insert(positions.pit2);
         let expected_unique_room_count = 3;
 
         if rooms.len() != expected_unique_room_count {
             Err(GameErr::NonUniqueSpawnLocations)
         } else {
             Ok(Game {
-                state: initial_state,
+                positions: positions,
                 action_provider: ap,
             })
         }
     }
 
     pub fn run(&mut self) {
-        let mut room_num = self.state.player_room;
-        let mut turn = self.state.turn;
-        let pit1_room = self.state.pit1_room;
-        let pit2_room = self.state.pit2_room;
+        let mut room_num = self.positions.player;
+        let mut turn = self.positions.turn;
+        let pit1_room = self.positions.pit1;
+        let pit2_room = self.positions.pit2;
 
         loop {
-            let game_state = GameState {
+            let positions = Pos {
                 turn: turn,
-                player_room: room_num,
-                pit1_room: pit1_room,
-                pit2_room: pit2_room,
+                player: room_num,
+                pit1: pit1_room,
+                pit2: pit2_room,
             };
-            let action = self.action_provider.next(&game_state);
+            let action = self.action_provider.next(&positions);
             match action {
                 Action::Move(next_room) if can_move(room_num, next_room) => room_num = next_room,
                 Action::Quit => break,
@@ -138,20 +139,20 @@ impl Game {
 
 impl PartialEq for Game {
     fn eq(&self, other: &Game) -> bool {
-        self.state == other.state
+        self.positions == other.positions
     }
 }
 
 impl fmt::Debug for Game {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let turn = self.state.turn;
-        let player = self.state.player_room;
-        let pit1 = self.state.pit1_room;
-        let pit2 = self.state.pit2_room;
+        let turn = self.positions.turn;
+        let player = self.positions.player;
+        let pit1 = self.positions.pit1;
+        let pit2 = self.positions.pit2;
 
         write!(
             f,
-            "GameState {{ turn: {} player: {} pit1: {} pit2: {} }}",
+            "Pos {{ turn: {} player: {} pit1: {} pit2: {} }}",
             turn,
             player,
             pit1,
@@ -168,30 +169,30 @@ mod game_tests {
     struct ActionProviderDummy;
 
     impl ActionProvider for ActionProviderDummy {
-        fn next(&mut self, _: &GameState) -> Action {
+        fn next(&mut self, _: &Pos) -> Action {
             Action::Quit
         }
     }
 
     struct ActionProviderSpy {
         actions: Vec<Action>,
-        expected_states: Vec<GameState>,
+        expected_positions: Vec<Pos>,
     }
 
     impl ActionProviderSpy {
-        fn new(actions: Vec<Action>, exptected_states: Vec<GameState>) -> Self {
+        fn new(actions: Vec<Action>, exptected_positions: Vec<Pos>) -> Self {
             ActionProviderSpy {
                 actions: actions,
-                expected_states: exptected_states,
+                expected_positions: exptected_positions,
             }
         }
     }
 
     impl ActionProvider for ActionProviderSpy {
-        fn next(&mut self, actual_state: &GameState) -> Action {
-            let expected_state = &self.expected_states[actual_state.turn];
+        fn next(&mut self, actual_positions: &Pos) -> Action {
+            let expected_positions = &self.expected_positions[actual_positions.turn];
 
-            assert_eq!(*expected_state, *actual_state);
+            assert_eq!(*expected_positions, *actual_positions);
 
             match self.actions.pop() {
                 Some(action) => action,
@@ -222,42 +223,42 @@ mod game_tests {
             Action::Move(3),
             Action::Move(2),
         ];
-        let expected_states = create_expected_game_states(vec![1, 2, 3, 12], 19, 20);
-        let initial_state = expected_states[0].clone();
+        let expected_positions = create_expected_game_positions(vec![1, 2, 3, 12], 19, 20);
+        let positions = expected_positions[0].clone();
 
-        let provider = Box::new(ActionProviderSpy::new(actions, expected_states));
+        let provider = Box::new(ActionProviderSpy::new(actions, expected_positions));
 
-        match Game::new(initial_state, provider) {
+        match Game::new(positions, provider) {
             Ok(mut game) => game.run(),
             Err(e) => panic!("{:?}", e),
         }
     }
 
     #[test]
-    fn initial_state_with_non_unique_spawns_causes_err() {
-        assert_state_has_game_result(GameState::new(1, 2, 2), Err(GameErr::NonUniqueSpawnLocations));
-        assert_state_has_game_result(GameState::new(2, 2, 1), Err(GameErr::NonUniqueSpawnLocations));
-        assert_state_has_game_result(GameState::new(2, 1, 2), Err(GameErr::NonUniqueSpawnLocations));
+    fn initial_pos_with_non_unique_spawns_causes_err() {
+        assert_pos_has_game_result(Pos::new(1, 2, 2), Err(GameErr::NonUniqueSpawnLocations));
+        assert_pos_has_game_result(Pos::new(2, 2, 1), Err(GameErr::NonUniqueSpawnLocations));
+        assert_pos_has_game_result(Pos::new(2, 1, 2), Err(GameErr::NonUniqueSpawnLocations));
     }
 
-    fn assert_state_has_game_result(initial_state: GameState, result: GameResult) {
-        let game = Game::new(initial_state, Box::new(ActionProviderDummy));
+    fn assert_pos_has_game_result(positions: Pos, result: GameResult) {
+        let game = Game::new(positions, Box::new(ActionProviderDummy));
 
         assert_eq!(result, game);
     }
 
-    fn create_expected_game_states(
+    fn create_expected_game_positions(
         rooms: Vec<RoomNum>,
         pit1: RoomNum,
         pit2: RoomNum,
-    ) -> Vec<GameState> {
+    ) -> Vec<Pos> {
         let mut result = Vec::new();
         for (i, room) in rooms.iter().enumerate() {
-            result.push(GameState {
+            result.push(Pos {
                 turn: i,
-                player_room: *room,
-                pit1_room: pit1,
-                pit2_room: pit2,
+                player: *room,
+                pit1: pit1,
+                pit2: pit2,
             });
         }
         result

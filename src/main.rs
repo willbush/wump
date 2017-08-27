@@ -17,9 +17,9 @@ fn main() {
     let pit1_room = 19;
     let pit2_room = 20;
 
-    let initial_state = GameState::new(player_room, pit1_room, pit2_room);
+    let initial_pos = Pos::new(player_room, pit1_room, pit2_room);
 
-    match Game::new(initial_state, Box::new(PlayerActionProvider)) {
+    match Game::new(initial_pos, Box::new(PlayerActionProvider)) {
         Ok(mut game) => game.run(),
         Err(e) => panic!("{:?}", e),
     }
@@ -28,8 +28,8 @@ fn main() {
 struct PlayerActionProvider;
 
 impl ActionProvider for PlayerActionProvider {
-    fn next(&mut self, game_state: &GameState) -> Action {
-        let room_num = game_state.player_room;
+    fn next(&mut self, positions: &Pos) -> Action {
+        let room_num = positions.player;
         loop {
             println!("You are in room {}", room_num);
             let (a, b, c) = game::adj_rooms_to(room_num);
