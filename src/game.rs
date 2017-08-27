@@ -57,6 +57,23 @@ pub enum Action {
     Quit,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum RunResult {
+    DeathByBottomlessPit,
+    UserQuit,
+}
+
+impl fmt::Display for RunResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let msg = match *self {
+            RunResult::DeathByBottomlessPit => "YYYIIIIEEEE... fell in a pit!\n\
+                                                Ha ha ha - you lose!\n",
+            RunResult::UserQuit => "",
+        };
+        write!(f, "{}", msg)
+    }
+}
+
 /// Position of game entities
 #[derive(Clone, PartialEq, Debug)]
 pub struct Pos {
@@ -113,24 +130,30 @@ impl Game {
         }
     }
 
-    pub fn run(&mut self) {
-        let mut room_num = self.positions.player;
+    pub fn run(&mut self) -> RunResult {
+        let mut player = self.positions.player;
         let mut turn = self.positions.turn;
-        let pit1_room = self.positions.pit1;
-        let pit2_room = self.positions.pit2;
+        let pit1 = self.positions.pit1;
+        let pit2 = self.positions.pit2;
 
         loop {
             let positions = Pos {
                 turn: turn,
-                player: room_num,
-                pit1: pit1_room,
-                pit2: pit2_room,
+                player: player,
+                pit1: pit1,
+                pit2: pit2,
             };
             let action = self.action_provider.next(&positions);
             match action {
-                Action::Move(next_room) if can_move(room_num, next_room) => room_num = next_room,
-                Action::Quit => break,
-                _ => panic!("illegal action state"),
+                Action::Move(next_room) if can_move(player, next_room) => {
+                    player = next_room;
+
+                    if player == pit1 || player == pit2 {
+                        return RunResult::DeathByBottomlessPit;
+                    }
+                }
+                Action::Quit => return RunResult::UserQuit,
+                _ => panic!("illegal action {:?}", action),
             }
             turn += 1;
         }
@@ -190,7 +213,12 @@ mod game_tests {
 
     impl ActionProvider for ActionProviderSpy {
         fn next(&mut self, actual_positions: &Pos) -> Action {
-            let expected_positions = &self.expected_positions[actual_positions.turn];
+            let turn = actual_positions.turn;
+            if turn >= self.expected_positions.len() {
+                panic!("unexpected number of turns taken! turn: {}", turn);
+            }
+
+            let expected_positions = &self.expected_positions[turn];
 
             assert_eq!(*expected_positions, *actual_positions);
 
@@ -224,14 +252,23 @@ mod game_tests {
             Action::Move(2),
         ];
         let expected_positions = create_expected_game_positions(vec![1, 2, 3, 12], 19, 20);
-        let positions = expected_positions[0].clone();
+        let initial_pos = expected_positions[0].clone();
 
-        let provider = Box::new(ActionProviderSpy::new(actions, expected_positions));
+        let provider = box ActionProviderSpy::new(actions, expected_positions);
 
-        match Game::new(positions, provider) {
-            Ok(mut game) => game.run(),
-            Err(e) => panic!("{:?}", e),
-        }
+        let mut game = Game::new(initial_pos, provider).unwrap();
+
+        assert_eq!(RunResult::UserQuit, game.run())
+    }
+
+    #[test]
+    fn can_move_and_fall_in_pit() {
+        let actions = vec![Action::Move(2)]; // move into bottomless pit
+        let initial_pos = Pos::new(1, 2, 3);
+        let provider = box ActionProviderSpy::new(actions, vec![initial_pos.clone()]);
+        let mut game = Game::new(initial_pos, provider).unwrap();
+
+        assert_eq!(RunResult::DeathByBottomlessPit, game.run())
     }
 
     #[test]
@@ -242,7 +279,7 @@ mod game_tests {
     }
 
     fn assert_pos_has_game_result(positions: Pos, result: GameResult) {
-        let game = Game::new(positions, Box::new(ActionProviderDummy));
+        let game = Game::new(positions, box ActionProviderDummy);
 
         assert_eq!(result, game);
     }

@@ -1,3 +1,4 @@
+#![feature(box_syntax, box_patterns)]
 #![cfg_attr(test, feature(plugin))]
 #![cfg_attr(test, plugin(quickcheck_macros))]
 #[cfg(test)]
@@ -6,22 +7,45 @@ extern crate rand;
 
 mod game;
 
+use game::*;
 use rand::{thread_rng, Rng};
+use std::collections::HashSet;
 use std::io;
 use std::io::Write;
-use game::*;
 
 fn main() {
-    let mut rng = thread_rng();
-    let player_room: RoomNum = rng.gen_range(1, MAP.len() + 1);
-    let pit1_room = 19;
-    let pit2_room = 20;
+    let (player, pit1, pit2) = gen_unique_rooms();
 
-    let initial_pos = Pos::new(player_room, pit1_room, pit2_room);
+    let initial_positions = Pos::new(player, pit1, pit2);
 
-    match Game::new(initial_pos, Box::new(PlayerActionProvider)) {
-        Ok(mut game) => game.run(),
+    match Game::new(initial_positions, box PlayerActionProvider) {
+        Ok(mut game) => print!("{}", game.run()),
         Err(e) => panic!("{:?}", e),
+    };
+}
+
+fn gen_unique_rooms() -> (RoomNum, RoomNum, RoomNum) {
+    let mut taken_rooms = HashSet::new();
+
+    let player_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(player_room);
+    let pit1_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(pit1_room);
+    let pit2_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(pit2_room);
+
+    (player_room, pit1_room, pit2_room)
+}
+
+fn gen_unique_rand_room(taken_rooms: &HashSet<RoomNum>) -> RoomNum {
+    let mut rng = thread_rng();
+
+    loop {
+        let room: RoomNum = rng.gen_range(1, MAP.len() + 1);
+
+        if !taken_rooms.contains(&room) {
+            return room;
+        }
     }
 }
 
