@@ -34,100 +34,7 @@ pub static MAP: [[RoomNum; 3]; 20] = [
     [13, 16, 19],
 ];
 
-fn can_move(next: RoomNum, current: RoomNum) -> bool {
-    if current > 0 && current <= MAP.len() {
-        let adj_rooms = MAP[current - 1];
-        let adj1 = adj_rooms[0];
-        let adj2 = adj_rooms[1];
-        let adj3 = adj_rooms[2];
-
-        next == adj1 || next == adj2 || next == adj3
-    } else {
-        false
-    }
-}
-
-fn gen_unique_rooms() -> (RoomNum, RoomNum, RoomNum) {
-    let mut taken_rooms = HashSet::new();
-
-    let player_room = gen_unique_rand_room(&taken_rooms);
-    taken_rooms.insert(player_room);
-    let pit1_room = gen_unique_rand_room(&taken_rooms);
-    taken_rooms.insert(pit1_room);
-    let pit2_room = gen_unique_rand_room(&taken_rooms);
-    taken_rooms.insert(pit2_room);
-
-    (player_room, pit1_room, pit2_room)
-}
-
-fn gen_unique_rand_room(taken_rooms: &HashSet<RoomNum>) -> RoomNum {
-    let mut rng = thread_rng();
-
-    loop {
-        let room: RoomNum = rng.gen_range(1, MAP.len() + 1);
-
-        if !taken_rooms.contains(&room) {
-            return room;
-        }
-    }
-}
-
-fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
-    let adj_rooms = MAP[room - 1];
-    (adj_rooms[0], adj_rooms[1], adj_rooms[2])
-}
-
 type RoomNum = usize;
-
-#[derive(Debug, PartialEq)]
-enum Action {
-    Move(RoomNum),
-    Quit,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum RunResult {
-    DeathByBottomlessPit,
-    UserQuit,
-}
-
-impl fmt::Display for RunResult {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let msg = match *self {
-            RunResult::DeathByBottomlessPit => {
-                "YYYIIIIEEEE... fell in a pit!\n\
-                 Ha ha ha - you lose!\n"
-            }
-            RunResult::UserQuit => "",
-        };
-        write!(f, "{}", msg)
-    }
-}
-
-/// Position of game entities
-#[derive(Clone, PartialEq, Debug)]
-pub struct Pos {
-    // The game turn starting from 0. Each player turn increments this by one.
-    turn: usize,
-    pub player: RoomNum,
-    pub pit1: RoomNum,
-    pub pit2: RoomNum,
-}
-
-impl Pos {
-    pub fn new(player: RoomNum, pit1: RoomNum, pit2: RoomNum) -> Self {
-        Pos {
-            turn: 0,
-            player: player,
-            pit1: pit1,
-            pit2: pit2,
-        }
-    }
-}
-
-trait ActionProvider {
-    fn next(&mut self, positions: &Pos) -> Action;
-}
 
 pub struct Game {
     positions: Pos,
@@ -176,6 +83,80 @@ impl Game {
     }
 }
 
+impl PartialEq for Game {
+    fn eq(&self, other: &Game) -> bool {
+        self.positions == other.positions
+    }
+}
+
+impl fmt::Debug for Game {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let turn = self.positions.turn;
+        let player = self.positions.player;
+        let pit1 = self.positions.pit1;
+        let pit2 = self.positions.pit2;
+
+        write!(
+            f,
+            "Pos {{ turn: {} player: {} pit1: {} pit2: {} }}",
+            turn,
+            player,
+            pit1,
+            pit2
+        )
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum RunResult {
+    DeathByBottomlessPit,
+    UserQuit,
+}
+
+impl fmt::Display for RunResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let msg = match *self {
+            RunResult::DeathByBottomlessPit => {
+                "YYYIIIIEEEE... fell in a pit!\n\
+                 Ha ha ha - you lose!\n"
+            }
+            RunResult::UserQuit => "",
+        };
+        write!(f, "{}", msg)
+    }
+}
+
+/// Position of game entities
+#[derive(Clone, PartialEq, Debug)]
+pub struct Pos {
+    // The game turn starting from 0. Each player turn increments this by one.
+    turn: usize,
+    pub player: RoomNum,
+    pub pit1: RoomNum,
+    pub pit2: RoomNum,
+}
+
+impl Pos {
+    pub fn new(player: RoomNum, pit1: RoomNum, pit2: RoomNum) -> Self {
+        Pos {
+            turn: 0,
+            player: player,
+            pit1: pit1,
+            pit2: pit2,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum Action {
+    Move(RoomNum),
+    Quit,
+}
+
+trait ActionProvider {
+    fn next(&mut self, positions: &Pos) -> Action;
+}
+
 struct PlayerActionProvider;
 
 impl ActionProvider for PlayerActionProvider {
@@ -193,6 +174,46 @@ impl ActionProvider for PlayerActionProvider {
                 _ => continue,
             }
         }
+    }
+}
+
+struct Player {
+    room: RoomNum,
+}
+
+impl Player {
+    fn new(room: RoomNum) -> Self {
+        Player { room: room }
+    }
+}
+
+struct SuperBat {
+    room: RoomNum,
+    ville_provider: Box<ElseWhereVilleProvider>,
+}
+
+impl SuperBat {
+    fn new(room: RoomNum) -> Self {
+        SuperBat {
+            room: room,
+            ville_provider: box RandVille,
+        }
+    }
+
+    fn snatch(&self, player: Player) -> Player {
+        Player::new(self.ville_provider.get_ville())
+    }
+}
+
+trait ElseWhereVilleProvider {
+    fn get_ville(&self) -> RoomNum;
+}
+
+struct RandVille;
+
+impl ElseWhereVilleProvider for RandVille {
+    fn get_ville(&self) -> RoomNum {
+        thread_rng().gen_range(1, MAP.len() + 1)
     }
 }
 
@@ -222,34 +243,53 @@ fn read_trimed_line() -> String {
     input.trim().to_string()
 }
 
+fn can_move(next: RoomNum, current: RoomNum) -> bool {
+    if current > 0 && current <= MAP.len() {
+        let adj_rooms = MAP[current - 1];
+        let adj1 = adj_rooms[0];
+        let adj2 = adj_rooms[1];
+        let adj3 = adj_rooms[2];
+
+        next == adj1 || next == adj2 || next == adj3
+    } else {
+        false
+    }
+}
+
 // Print without new line and flush to force it to show up.
 fn print(s: &str) {
     print!("{}", s);
     io::stdout().flush().unwrap();
 }
 
-impl PartialEq for Game {
-    fn eq(&self, other: &Game) -> bool {
-        self.positions == other.positions
+fn gen_unique_rooms() -> (RoomNum, RoomNum, RoomNum) {
+    let mut taken_rooms = HashSet::new();
+
+    let player_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(player_room);
+    let pit1_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(pit1_room);
+    let pit2_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(pit2_room);
+
+    (player_room, pit1_room, pit2_room)
+}
+
+fn gen_unique_rand_room(taken_rooms: &HashSet<RoomNum>) -> RoomNum {
+    let mut rng = thread_rng();
+
+    loop {
+        let room: RoomNum = rng.gen_range(1, MAP.len() + 1);
+
+        if !taken_rooms.contains(&room) {
+            return room;
+        }
     }
 }
 
-impl fmt::Debug for Game {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let turn = self.positions.turn;
-        let player = self.positions.player;
-        let pit1 = self.positions.pit1;
-        let pit2 = self.positions.pit2;
-
-        write!(
-            f,
-            "Pos {{ turn: {} player: {} pit1: {} pit2: {} }}",
-            turn,
-            player,
-            pit1,
-            pit2
-        )
-    }
+fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
+    let adj_rooms = MAP[room - 1];
+    (adj_rooms[0], adj_rooms[1], adj_rooms[2])
 }
 
 #[cfg(test)]
@@ -276,6 +316,16 @@ mod game_tests {
                 actions: actions,
                 expected_positions: exptected_positions,
             }
+        }
+    }
+
+    struct MockVille {
+        ville: RoomNum,
+    }
+
+    impl ElseWhereVilleProvider for MockVille {
+        fn get_ville(&self) -> RoomNum {
+            self.ville
         }
     }
 
@@ -343,6 +393,19 @@ mod game_tests {
         };
 
         assert_eq!(RunResult::DeathByBottomlessPit, game.run())
+    }
+
+    #[test]
+    fn super_bat_can_snatch() {
+        // snatch and send player to room 20
+        let expected_room = 20;
+        let ville_provider = box MockVille { ville: expected_room };
+        let bat = SuperBat { room: expected_room, ville_provider: ville_provider };
+
+        let player = Player::new(1);
+        let player = bat.snatch(player);
+
+        assert_eq!(expected_room, player.room);
     }
 
     fn create_expected_game_positions(
