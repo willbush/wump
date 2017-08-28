@@ -1,5 +1,8 @@
 use std::fmt;
 use std::collections::HashSet;
+use rand::{thread_rng, Rng};
+use std::io;
+use std::io::Write;
 
 // The game map in Hunt the Wumpus is laid out as a dodecahedron. The vertices
 // of the dodecahedron are considered rooms, and each room has 3 adjacent rooms.
@@ -31,7 +34,7 @@ pub static MAP: [[RoomNum; 3]; 20] = [
     [13, 16, 19],
 ];
 
-pub fn can_move(next: RoomNum, current: RoomNum) -> bool {
+fn can_move(next: RoomNum, current: RoomNum) -> bool {
     if current > 0 && current <= MAP.len() {
         let adj_rooms = MAP[current - 1];
         let adj1 = adj_rooms[0];
@@ -44,15 +47,40 @@ pub fn can_move(next: RoomNum, current: RoomNum) -> bool {
     }
 }
 
-pub fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
+fn gen_unique_rooms() -> (RoomNum, RoomNum, RoomNum) {
+    let mut taken_rooms = HashSet::new();
+
+    let player_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(player_room);
+    let pit1_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(pit1_room);
+    let pit2_room = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(pit2_room);
+
+    (player_room, pit1_room, pit2_room)
+}
+
+fn gen_unique_rand_room(taken_rooms: &HashSet<RoomNum>) -> RoomNum {
+    let mut rng = thread_rng();
+
+    loop {
+        let room: RoomNum = rng.gen_range(1, MAP.len() + 1);
+
+        if !taken_rooms.contains(&room) {
+            return room;
+        }
+    }
+}
+
+fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
     let adj_rooms = MAP[room - 1];
     (adj_rooms[0], adj_rooms[1], adj_rooms[2])
 }
 
-pub type RoomNum = usize;
+type RoomNum = usize;
 
 #[derive(Debug, PartialEq)]
-pub enum Action {
+enum Action {
     Move(RoomNum),
     Quit,
 }
@@ -66,8 +94,10 @@ pub enum RunResult {
 impl fmt::Display for RunResult {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let msg = match *self {
-            RunResult::DeathByBottomlessPit => "YYYIIIIEEEE... fell in a pit!\n\
-                                                Ha ha ha - you lose!\n",
+            RunResult::DeathByBottomlessPit => {
+                "YYYIIIIEEEE... fell in a pit!\n\
+                 Ha ha ha - you lose!\n"
+            }
             RunResult::UserQuit => "",
         };
         write!(f, "{}", msg)
@@ -95,17 +125,9 @@ impl Pos {
     }
 }
 
-pub trait ActionProvider {
+trait ActionProvider {
     fn next(&mut self, positions: &Pos) -> Action;
 }
-
-
-#[derive(PartialEq, Debug)]
-pub enum GameErr {
-    NonUniqueSpawnLocations,
-}
-
-type GameResult = Result<Game, GameErr>;
 
 pub struct Game {
     positions: Pos,
@@ -113,20 +135,14 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(positions: Pos, ap: Box<ActionProvider>) -> GameResult {
-        let mut rooms = HashSet::new();
-        rooms.insert(positions.player);
-        rooms.insert(positions.pit1);
-        rooms.insert(positions.pit2);
-        let expected_unique_room_count = 3;
+    pub fn new() -> Self {
+        let (player, pit1, pit2) = gen_unique_rooms();
 
-        if rooms.len() != expected_unique_room_count {
-            Err(GameErr::NonUniqueSpawnLocations)
-        } else {
-            Ok(Game {
-                positions: positions,
-                action_provider: ap,
-            })
+        let initial_positions = Pos::new(player, pit1, pit2);
+
+        Game {
+            positions: initial_positions,
+            action_provider: box PlayerActionProvider,
         }
     }
 
@@ -158,6 +174,58 @@ impl Game {
             turn += 1;
         }
     }
+}
+
+struct PlayerActionProvider;
+
+impl ActionProvider for PlayerActionProvider {
+    fn next(&mut self, positions: &Pos) -> Action {
+        let room_num = positions.player;
+        loop {
+            println!("You are in room {}", room_num);
+            let (a, b, c) = adj_rooms_to(room_num);
+            println!("Tunnel leads to {} {} {}", a, b, c);
+            print("Shoot, Move, or Quit (S, M, Q) ");
+
+            match read_sanitized_line().as_ref() {
+                "M" => return Action::Move(get_adj_room_to(room_num)),
+                "Q" => return Action::Quit,
+                _ => continue,
+            }
+        }
+    }
+}
+
+fn get_adj_room_to(room: RoomNum) -> RoomNum {
+    print("Where to? ");
+
+    loop {
+        let input = read_sanitized_line();
+
+        match input.parse::<RoomNum>() {
+            Ok(next) if can_move(room, next) => return next,
+            _ => print("Not Possible - Where to? "),
+        }
+    }
+}
+
+// Reads a line from stdin, trims it, and returns it as upper case.
+fn read_sanitized_line() -> String {
+    read_trimed_line().to_uppercase()
+}
+
+fn read_trimed_line() -> String {
+    let mut input = String::new();
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read line.");
+    input.trim().to_string()
+}
+
+// Print without new line and flush to force it to show up.
+fn print(s: &str) {
+    print!("{}", s);
+    io::stdout().flush().unwrap();
 }
 
 impl PartialEq for Game {
@@ -256,7 +324,10 @@ mod game_tests {
 
         let provider = box ActionProviderSpy::new(actions, expected_positions);
 
-        let mut game = Game::new(initial_pos, provider).unwrap();
+        let mut game = Game {
+            positions: initial_pos,
+            action_provider: provider,
+        };
 
         assert_eq!(RunResult::UserQuit, game.run())
     }
@@ -266,22 +337,12 @@ mod game_tests {
         let actions = vec![Action::Move(2)]; // move into bottomless pit
         let initial_pos = Pos::new(1, 2, 3);
         let provider = box ActionProviderSpy::new(actions, vec![initial_pos.clone()]);
-        let mut game = Game::new(initial_pos, provider).unwrap();
+        let mut game = Game {
+            positions: initial_pos,
+            action_provider: provider,
+        };
 
         assert_eq!(RunResult::DeathByBottomlessPit, game.run())
-    }
-
-    #[test]
-    fn initial_pos_with_non_unique_spawns_causes_err() {
-        assert_pos_has_game_result(Pos::new(1, 2, 2), Err(GameErr::NonUniqueSpawnLocations));
-        assert_pos_has_game_result(Pos::new(2, 2, 1), Err(GameErr::NonUniqueSpawnLocations));
-        assert_pos_has_game_result(Pos::new(2, 1, 2), Err(GameErr::NonUniqueSpawnLocations));
-    }
-
-    fn assert_pos_has_game_result(positions: Pos, result: GameResult) {
-        let game = Game::new(positions, box ActionProviderDummy);
-
-        assert_eq!(result, game);
     }
 
     fn create_expected_game_positions(
