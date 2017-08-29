@@ -9,10 +9,10 @@ extern crate rand;
 
 mod game;
 
-use game::Game;
+use game::*;
 
 fn main() {
-    let mut game = Game::new();
+    let mut game = Game::new(PlayerActionProvider);
     let run_result = game.run();
 
     print!("{}", run_result);

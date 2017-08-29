@@ -36,20 +36,20 @@ pub static MAP: [[RoomNum; 3]; 20] = [
 
 type RoomNum = usize;
 
-pub struct Game {
+pub struct Game<T: ActionProvider> {
     positions: Pos,
-    action_provider: Box<ActionProvider>,
+    action_provider: T,
 }
 
-impl Game {
-    pub fn new() -> Self {
+impl<T: ActionProvider> Game<T> {
+    pub fn new(provider: T) -> Self {
         let (player, pit1, pit2) = gen_unique_rooms();
 
         let initial_positions = Pos::new(player, pit1, pit2);
 
         Game {
             positions: initial_positions,
-            action_provider: box PlayerActionProvider,
+            action_provider: provider,
         }
     }
 
@@ -83,13 +83,13 @@ impl Game {
     }
 }
 
-impl PartialEq for Game {
-    fn eq(&self, other: &Game) -> bool {
+impl<T: ActionProvider> PartialEq for Game<T> {
+    fn eq(&self, other: &Game<T>) -> bool {
         self.positions == other.positions
     }
 }
 
-impl fmt::Debug for Game {
+impl<T: ActionProvider> fmt::Debug for Game<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let turn = self.positions.turn;
         let player = self.positions.player;
@@ -148,16 +148,16 @@ impl Pos {
 }
 
 #[derive(Debug, PartialEq)]
-enum Action {
+pub enum Action {
     Move(RoomNum),
     Quit,
 }
 
-trait ActionProvider {
+pub trait ActionProvider {
     fn next(&mut self, positions: &Pos) -> Action;
 }
 
-struct PlayerActionProvider;
+pub struct PlayerActionProvider;
 
 impl ActionProvider for PlayerActionProvider {
     fn next(&mut self, positions: &Pos) -> Action {
@@ -187,19 +187,12 @@ impl Player {
     }
 }
 
-struct SuperBat {
+struct SuperBat<T: ElseWhereVilleProvider> {
     room: RoomNum,
-    ville_provider: Box<ElseWhereVilleProvider>,
+    ville_provider: T,
 }
 
-impl SuperBat {
-    fn new(room: RoomNum) -> Self {
-        SuperBat {
-            room: room,
-            ville_provider: box RandVille,
-        }
-    }
-
+impl<T: ElseWhereVilleProvider> SuperBat<T> {
     fn snatch(&self, player: Player) -> Player {
         Player::new(self.ville_provider.get_ville())
     }
@@ -372,7 +365,7 @@ mod game_tests {
         let expected_positions = create_expected_game_positions(vec![1, 2, 3, 12], 19, 20);
         let initial_pos = expected_positions[0].clone();
 
-        let provider = box ActionProviderSpy::new(actions, expected_positions);
+        let provider = ActionProviderSpy::new(actions, expected_positions);
 
         let mut game = Game {
             positions: initial_pos,
@@ -386,7 +379,7 @@ mod game_tests {
     fn can_move_and_fall_in_pit() {
         let actions = vec![Action::Move(2)]; // move into bottomless pit
         let initial_pos = Pos::new(1, 2, 3);
-        let provider = box ActionProviderSpy::new(actions, vec![initial_pos.clone()]);
+        let provider = ActionProviderSpy::new(actions, vec![initial_pos.clone()]);
         let mut game = Game {
             positions: initial_pos,
             action_provider: provider,
@@ -399,7 +392,7 @@ mod game_tests {
     fn super_bat_can_snatch() {
         // snatch and send player to room 20
         let expected_room = 20;
-        let ville_provider = box MockVille { ville: expected_room };
+        let ville_provider = MockVille { ville: expected_room };
         let bat = SuperBat { room: expected_room, ville_provider: ville_provider };
 
         let player = Player::new(1);
