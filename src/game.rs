@@ -90,25 +90,22 @@ where
     }
 
     pub fn run(&mut self) -> RunResult {
-        let mut player = self.player.room;
-        let pit1 = self.pit1.room;
-        let pit2 = self.pit2.room;
-
         loop {
             let state = self.get_state();
             let action = self.director.next(&state);
 
             match action {
-                Action::Move(next_room) if can_move(player, next_room) => {
-                    player = next_room;
+                Action::Move(next_room) if can_move(self.player.room, next_room) => {
+                    self.player.room = next_room;
 
-                    if player == pit1 || player == pit2 {
+                    if self.player.room == self.pit1.room || self.player.room == self.pit2.room {
                         return RunResult::DeathByBottomlessPit;
                     }
                 }
                 Action::Quit => return RunResult::UserQuit,
                 _ => panic!("illegal action {:?}", action),
             }
+            self.turn += 1;
         }
     }
 
