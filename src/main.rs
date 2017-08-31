@@ -12,7 +12,9 @@ mod game;
 use game::*;
 
 fn main() {
-    let mut game = Game::new(PlayerActionProvider);
+    let mut director = &mut PlayerDirector;
+    let provider = &RandProvider;
+    let mut game = Game::new(director, provider);
     let run_result = game.run();
 
     print!("{}", run_result);
