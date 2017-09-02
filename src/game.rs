@@ -43,14 +43,13 @@ pub struct Game<'a, D: Director + 'a, P: Provider + 'a> {
     bat1: SuperBat<'a, P>,
     bat2: SuperBat<'a, P>,
     director: &'a mut D,
-    turn: usize,
+    turn: usize
 }
 
 impl<'a, D, P> Game<'a, D, P>
 where
     D: Director,
-    P: 'a + Provider,
-{
+    P: 'a + Provider {
     pub fn new(director: &'a mut D, provider: &'a P) -> Self {
         let (player, pit1, pit2, bat1, bat2) = gen_unique_rooms();
 
@@ -59,15 +58,9 @@ where
             player: Player { room: player },
             pit1: BottomlessPit { room: pit1 },
             pit2: BottomlessPit { room: pit2 },
-            bat1: SuperBat {
-                room: bat1,
-                provider: provider,
-            },
-            bat2: SuperBat {
-                room: bat2,
-                provider: provider,
-            },
-            director: director,
+            bat1: SuperBat { room: bat1, provider: provider },
+            bat2: SuperBat { room: bat2, provider: provider },
+            director: director
         }
     }
 
@@ -79,13 +72,13 @@ where
             pit2: BottomlessPit { room: state.pit2 },
             bat1: SuperBat {
                 room: state.bat1,
-                provider: provider,
+                provider: provider
             },
             bat2: SuperBat {
                 room: state.bat2,
-                provider: provider,
+                provider: provider
             },
-            director: director,
+            director: director
         }
     }
 
@@ -96,17 +89,39 @@ where
 
             match action {
                 Action::Move(next_room) if can_move(self.player.room, next_room) => {
-                    self.player.room = next_room;
-
-                    if self.player.room == self.pit1.room || self.player.room == self.pit2.room {
-                        return RunResult::DeathByBottomlessPit;
+                    if let Some(run_result) = self.move_player(next_room) {
+                        return run_result;
                     }
                 }
                 Action::Quit => return RunResult::UserQuit,
-                _ => panic!("illegal action {:?}", action),
+                _ => panic!("illegal action {:?}", action)
             }
             self.turn += 1;
         }
+    }
+
+    fn move_player(&mut self, next_room: RoomNum) -> Option<RunResult> {
+        self.player.room = next_room;
+
+        loop {
+            let mut is_snatched = false;
+
+            if self.player.room == self.pit1.room || self.player.room == self.pit2.room {
+                return Some(RunResult::DeathByBottomlessPit);
+            }
+            if self.player.room == self.bat1.room {
+                self.bat1.snatch(&mut self.player);
+                is_snatched = true;
+            }
+            if self.player.room == self.bat2.room {
+                self.bat2.snatch(&mut self.player);
+                is_snatched = true;
+            }
+            if (!is_snatched) {
+                break;
+            }
+        }
+        None
     }
 
     fn get_state(&self) -> State {
@@ -116,7 +131,7 @@ where
             pit1: self.pit1.room,
             pit2: self.pit2.room,
             bat1: self.bat1.room,
-            bat2: self.bat2.room,
+            bat2: self.bat2.room
         }
     }
 }
@@ -124,18 +139,14 @@ where
 impl<'a, D, P> PartialEq for Game<'a, D, P>
 where
     D: Director,
-    P: 'a + Provider,
-{
-    fn eq(&self, other: &Game<D, P>) -> bool {
-        self.get_state() == other.get_state()
-    }
+    P: 'a + Provider {
+    fn eq(&self, other: &Game<D, P>) -> bool { self.get_state() == other.get_state() }
 }
 
 impl<'a, D, P> fmt::Debug for Game<'a, D, P>
 where
     D: Director,
-    P: 'a + Provider,
-{
+    P: 'a + Provider {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let turn = self.turn;
         let player = self.player.room;
@@ -156,7 +167,7 @@ where
 #[derive(Debug, PartialEq)]
 pub enum RunResult {
     DeathByBottomlessPit,
-    UserQuit,
+    UserQuit
 }
 
 impl fmt::Display for RunResult {
@@ -166,7 +177,7 @@ impl fmt::Display for RunResult {
                 "YYYIIIIEEEE... fell in a pit!\n\
                  Ha ha ha - you lose!\n"
             }
-            RunResult::UserQuit => "",
+            RunResult::UserQuit => ""
         };
         write!(f, "{}", msg)
     }
@@ -181,13 +192,13 @@ pub struct State {
     pub pit1: RoomNum,
     pub pit2: RoomNum,
     pub bat1: RoomNum,
-    pub bat2: RoomNum,
+    pub bat2: RoomNum
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Action {
     Move(RoomNum),
-    Quit,
+    Quit
 }
 
 pub trait Director {
@@ -208,24 +219,22 @@ impl Director for PlayerDirector {
             match read_sanitized_line().as_ref() {
                 "M" => return Action::Move(get_adj_room_to(room_num)),
                 "Q" => return Action::Quit,
-                _ => continue,
+                _ => continue
             }
         }
     }
 }
 
 struct Player {
-    room: RoomNum,
+    room: RoomNum
 }
 
 impl Player {
-    fn new(room: RoomNum) -> Self {
-        Player { room: room }
-    }
+    fn new(room: RoomNum) -> Self { Player { room: room } }
 }
 
 struct BottomlessPit {
-    room: RoomNum,
+    room: RoomNum
 }
 
 pub trait Provider {
@@ -234,24 +243,19 @@ pub trait Provider {
 
 struct SuperBat<'a, P: 'a + Provider> {
     room: RoomNum,
-    provider: &'a P,
+    provider: &'a P
 }
 
 impl<'a, P> SuperBat<'a, P>
 where
-    P: Provider,
-{
-    fn snatch(&self, player: &mut Player) {
-        player.room = self.provider.get_room();
-    }
+    P: Provider {
+    fn snatch(&self, player: &mut Player) { player.room = self.provider.get_room(); }
 }
 
 pub struct RandProvider;
 
 impl Provider for RandProvider {
-    fn get_room(&self) -> RoomNum {
-        thread_rng().gen_range(1, MAP.len() + 1)
-    }
+    fn get_room(&self) -> RoomNum { thread_rng().gen_range(1, MAP.len() + 1) }
 }
 
 fn get_adj_room_to(room: RoomNum) -> RoomNum {
@@ -262,15 +266,13 @@ fn get_adj_room_to(room: RoomNum) -> RoomNum {
 
         match input.parse::<RoomNum>() {
             Ok(next) if can_move(room, next) => return next,
-            _ => print("Not Possible - Where to? "),
+            _ => print("Not Possible - Where to? ")
         }
     }
 }
 
 // Reads a line from stdin, trims it, and returns it as upper case.
-fn read_sanitized_line() -> String {
-    read_trimed_line().to_uppercase()
-}
+fn read_sanitized_line() -> String { read_trimed_line().to_uppercase() }
 
 fn read_trimed_line() -> String {
     let mut input = String::new();
@@ -336,25 +338,35 @@ fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
 mod game_tests {
     use super::*;
 
-    #[derive(Debug, PartialEq)]
     struct DirectorDummy;
 
     impl Director for DirectorDummy {
-        fn next(&mut self, _: &State) -> Action {
-            Action::Quit
+        fn next(&mut self, _: &State) -> Action { Action::Quit }
+    }
+
+    struct DirectorMock {
+        actions: Vec<Action>
+    }
+
+    impl Director for DirectorMock {
+        fn next(&mut self, state: &State) -> Action {
+            match self.actions.pop() {
+                Some(action) => action,
+                None => panic!("too many expected actions")
+            }
         }
     }
 
     struct DirectorSpy {
         actions: Vec<Action>,
-        expected_states: Vec<State>,
+        expected_states: Vec<State>
     }
 
     impl DirectorSpy {
         fn new(actions: Vec<Action>, exptected_states: Vec<State>) -> Self {
             DirectorSpy {
                 actions: actions,
-                expected_states: exptected_states,
+                expected_states: exptected_states
             }
         }
     }
@@ -372,7 +384,7 @@ mod game_tests {
 
             match self.actions.pop() {
                 Some(action) => action,
-                None => panic!("too many pops"),
+                None => panic!("too many expected actions")
             }
         }
     }
@@ -380,19 +392,31 @@ mod game_tests {
     struct DummyProvider;
 
     impl Provider for DummyProvider {
+        fn get_room(&self) -> RoomNum { 0 }
+    }
+
+    struct RandRoomProvider {
+        snatch_to_room1: RoomNum,
+        snatch_to_room2: RoomNum
+    }
+
+    impl Provider for RandRoomProvider {
         fn get_room(&self) -> RoomNum {
-            0
+            let is_rand_true = thread_rng().gen::<bool>();
+            if is_rand_true {
+                self.snatch_to_room1
+            } else {
+                self.snatch_to_room2
+            }
         }
     }
 
     struct MockProvider {
-        room: RoomNum,
+        snatch_to_room: RoomNum
     }
 
     impl Provider for MockProvider {
-        fn get_room(&self) -> RoomNum {
-            self.room
-        }
+        fn get_room(&self) -> RoomNum { self.snatch_to_room }
     }
 
     // One property that exists for the map is if current room is in bounds of
@@ -423,7 +447,7 @@ mod game_tests {
             pit1: 17,
             pit2: 18,
             bat1: 19,
-            bat2: 20,
+            bat2: 20
         };
         let expected_states = create_player_state_trans_from(&initial_state, &vec![2, 3, 12]);
 
@@ -444,7 +468,7 @@ mod game_tests {
             pit1: 2,
             pit2: 3,
             bat1: 4,
-            bat2: 5,
+            bat2: 5
         };
         let director = &mut DirectorSpy::new(actions, vec![initial_state.clone()]);
         let provider = &DummyProvider;
@@ -458,12 +482,10 @@ mod game_tests {
         // snatch and send player to room 20
         let expected_room = 20;
 
-        let provider = &MockProvider {
-            room: expected_room,
-        };
+        let provider = &MockProvider { snatch_to_room: expected_room };
         let bat = SuperBat {
             room: expected_room,
-            provider: provider,
+            provider: provider
         };
 
         let mut player = &mut Player::new(1);
@@ -474,18 +496,24 @@ mod game_tests {
 
     #[test]
     fn super_bat_can_snatch_player_to_pit() {
+        let adj_room_to_player = 2;
+        let other_room = 5;
+        let is_bat1_adj = thread_rng().gen::<bool>();
         // move into super bats which are set to snatch into a pit
-        let actions = vec![Action::Move(2)];
         let initial_state = State {
             turn: 0,
             player: 1,
-            pit1: 2,
-            pit2: 3,
-            bat1: 4,
-            bat2: 5,
+            bat1: if is_bat1_adj { adj_room_to_player } else { other_room },
+            pit1: 3,
+            pit2: 4,
+            bat2: if !is_bat1_adj { adj_room_to_player } else { other_room }
         };
-        let mut director = &mut DirectorSpy::new(actions, vec![initial_state.clone()]);
-        let provider = &DummyProvider;
+        let mut director = &mut DirectorMock { actions: vec![Action::Move(2)] };
+        // snatch back to the same room as the bat or the pit randomly
+        let provider = &RandRoomProvider {
+            snatch_to_room1: 3,
+            snatch_to_room2: 2
+        };
         let mut game = Game::new_with_initial_state(director, provider, initial_state);
 
         assert_eq!(RunResult::DeathByBottomlessPit, game.run())
@@ -494,7 +522,7 @@ mod game_tests {
     /// Create state transitions starting from the given initial state
     fn create_player_state_trans_from(
         initial_state: &State,
-        room_trans: &Vec<RoomNum>,
+        room_trans: &Vec<RoomNum>
     ) -> Vec<State> {
         let mut result = Vec::new();
         result.push(initial_state.clone());
@@ -506,7 +534,7 @@ mod game_tests {
                 pit1: initial_state.pit1,
                 pit2: initial_state.pit2,
                 bat1: initial_state.bat1,
-                bat2: initial_state.bat2,
+                bat2: initial_state.bat2
             });
         }
         result
