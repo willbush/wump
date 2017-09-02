@@ -43,7 +43,8 @@ pub struct Game<'a, D: Director + 'a, P: Provider + 'a> {
     bat1: SuperBat<'a, P>,
     bat2: SuperBat<'a, P>,
     director: &'a mut D,
-    turn: usize
+    turn: usize,
+    is_cheating: bool
 }
 
 impl<'a, D, P> Game<'a, D, P>
@@ -54,19 +55,19 @@ where
         let (player, pit1, pit2, bat1, bat2) = gen_unique_rooms();
 
         Game {
-            turn: 0,
             player: Player { room: player },
             pit1: BottomlessPit { room: pit1 },
             pit2: BottomlessPit { room: pit2 },
             bat1: SuperBat { room: bat1, provider: provider },
             bat2: SuperBat { room: bat2, provider: provider },
-            director: director
+            director: director,
+            turn: 0,
+            is_cheating: false
         }
     }
 
     fn new_with_initial_state(director: &'a mut D, provider: &'a P, state: State) -> Self {
         Game {
-            turn: state.turn,
             player: Player { room: state.player },
             pit1: BottomlessPit { room: state.pit1 },
             pit2: BottomlessPit { room: state.pit2 },
@@ -78,12 +79,19 @@ where
                 room: state.bat2,
                 provider: provider
             },
-            director: director
+            director: director,
+            turn: state.turn,
+            is_cheating: false
         }
     }
 
+    pub fn enable_cheat_mode(&mut self) { self.is_cheating = true; }
+
     pub fn run(&mut self) -> RunResult {
         loop {
+            if self.is_cheating {
+                println!("{}", self);
+            }
             let state = self.get_state();
             let action = self.director.next(&state);
 
@@ -112,8 +120,7 @@ where
             if self.player.room == self.bat1.room {
                 self.bat1.snatch(&mut self.player);
                 is_snatched = true;
-            }
-            if self.player.room == self.bat2.room {
+            } else if self.player.room == self.bat2.room {
                 self.bat2.snatch(&mut self.player);
                 is_snatched = true;
             }
@@ -148,18 +155,33 @@ where
     D: Director,
     P: 'a + Provider {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let turn = self.turn;
-        let player = self.player.room;
-        let pit1 = self.pit1.room;
-        let pit2 = self.pit2.room;
-
         write!(
             f,
-            "State {{ turn: {} player: {} pit1: {} pit2: {} }}",
-            turn,
-            player,
-            pit1,
-            pit2
+            "State {{ turn: {} player: {} pit1: {} pit2: {} bat1: {}, bat2: {} }}",
+            self.turn,
+            self.player.room,
+            self.pit1.room,
+            self.pit2.room,
+            self.bat1.room,
+            self.bat2.room
+        )
+    }
+}
+
+impl<'a, D, P> fmt::Display for Game<'a, D, P>
+where
+    D: Director,
+    P: 'a + Provider {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "player turn: {}, rooms: player {}, pit1: {}, pit2: {}, bat1: {}, bat2: {}.",
+            self.turn,
+            self.player.room,
+            self.pit1.room,
+            self.pit2.room,
+            self.bat1.room,
+            self.bat2.room
         )
     }
 }
