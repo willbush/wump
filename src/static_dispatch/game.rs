@@ -48,9 +48,8 @@ pub struct Game<'a, D: Director + 'a, P: Provider + 'a> {
 }
 
 impl<'a, D, P> Game<'a, D, P>
-where
-    D: Director,
-    P: 'a + Provider {
+    where D: Director,
+          P: 'a + Provider {
     pub fn new(director: &'a mut D, provider: &'a P) -> Self {
         let (player, pit1, pit2, bat1, bat2) = gen_unique_rooms();
 
@@ -124,11 +123,10 @@ where
                 self.bat2.snatch(&mut self.player);
                 is_snatched = true;
             }
-            if (!is_snatched) {
-                break;
+            if !is_snatched {
+                return None;
             }
         }
-        None
     }
 
     fn get_state(&self) -> State {
@@ -144,16 +142,14 @@ where
 }
 
 impl<'a, D, P> PartialEq for Game<'a, D, P>
-where
-    D: Director,
-    P: 'a + Provider {
+    where D: Director,
+          P: 'a + Provider {
     fn eq(&self, other: &Game<D, P>) -> bool { self.get_state() == other.get_state() }
 }
 
 impl<'a, D, P> fmt::Debug for Game<'a, D, P>
-where
-    D: Director,
-    P: 'a + Provider {
+    where D: Director,
+          P: 'a + Provider {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -169,9 +165,8 @@ where
 }
 
 impl<'a, D, P> fmt::Display for Game<'a, D, P>
-where
-    D: Director,
-    P: 'a + Provider {
+    where D: Director,
+          P: 'a + Provider {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -269,8 +264,7 @@ struct SuperBat<'a, P: 'a + Provider> {
 }
 
 impl<'a, P> SuperBat<'a, P>
-where
-    P: Provider {
+    where P: Provider {
     fn snatch(&self, player: &mut Player) { player.room = self.provider.get_room(); }
 }
 
