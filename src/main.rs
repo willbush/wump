@@ -9,12 +9,17 @@ extern crate rand;
 
 mod static_dispatch;
 mod dynamic_dispatch;
+mod message;
 
 use static_dispatch::game::{Game as SdGame, PlayerDirector, RandProvider};
 use dynamic_dispatch::game::Game as DdGame;
+use message::Logo;
 use std::env;
+use std::{thread, time};
 
 fn main() {
+    print_logo();
+
     let args: Vec<String> = env::args().collect();
     let is_cheating = args.len() > 1 && &args[1] == "cheat";
     let is_sd_game = args.len() > 2 && &args[2] == "dd";
@@ -33,4 +38,12 @@ fn main() {
 
         print!("{}", run_result);
     }
+}
+
+fn print_logo() {
+    println!("{}", Logo::HUNT_ASCII);
+    thread::sleep(time::Duration::from_millis(500));
+    println!("{}", Logo::THE_ASCII);
+    thread::sleep(time::Duration::from_millis(500));
+    println!("{}", Logo::WUMPUS_ASCII);
 }

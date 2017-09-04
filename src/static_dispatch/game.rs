@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use rand::{thread_rng, Rng};
 use std::io;
 use std::io::Write;
+use message::{Message, Prompt, Warning};
 
 // The game map in Hunt the Wumpus is laid out as a dodecahedron. The vertices
 // of the dodecahedron are considered rooms, and each room has 3 adjacent rooms.
@@ -191,10 +192,9 @@ impl fmt::Display for RunResult {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let msg = match *self {
             RunResult::DeathByBottomlessPit => {
-                "YYYIIIIEEEE... fell in a pit!\n\
-                 Ha ha ha - you lose!\n"
+                format!("{}\n{}", Message::FELL_IN_PIT, Message::LOSE)
             }
-            RunResult::UserQuit => ""
+            RunResult::UserQuit => "".into()
         };
         write!(f, "{}", msg)
     }
@@ -231,7 +231,7 @@ impl Director for PlayerDirector {
             println!("You are in room {}", room_num);
             let (a, b, c) = adj_rooms_to(room_num);
             println!("Tunnel leads to {} {} {}", a, b, c);
-            print("Shoot, Move, or Quit (S, M, Q) ");
+            print(Prompt::ACTION);
 
             match read_sanitized_line().as_ref() {
                 "M" => return Action::Move(get_adj_room_to(room_num)),
