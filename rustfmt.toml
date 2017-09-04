@@ -6,7 +6,6 @@ closure_block_indent_threshold = 1
 condense_wildcard_suffixes = true
 control_style = "Legacy"
 fn_brace_style = "PreferSameLine"
-fn_single_line = true
 item_brace_style = "PreferSameLine"
 multiline_closure_forces_block = true
 reorder_imported = true

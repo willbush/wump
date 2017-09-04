@@ -10,9 +10,11 @@ extern crate rand;
 mod static_dispatch;
 mod dynamic_dispatch;
 mod message;
+mod util;
+mod map;
 
 use static_dispatch::game::{Game as SdGame, PlayerDirector, RandProvider};
-use dynamic_dispatch::game::Game as DdGame;
+// use dynamic_dispatch::game::Game as DdGame;
 use message::Logo;
 use std::env;
 use std::{thread, time};
@@ -25,8 +27,8 @@ fn main() {
     let is_sd_game = args.len() > 2 && &args[2] == "dd";
 
     if is_sd_game {
-        let game = DdGame;
-        game.say_hi();
+        // let mut game = DdGame;
+        // game.run();
     } else {
         let mut director = &mut PlayerDirector;
         let provider = &RandProvider;
