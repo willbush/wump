@@ -32,7 +32,7 @@ pub static MAP: [[RoomNum; 3]; 20] = [
     [13, 16, 19],
 ];
 
-pub fn can_move(next: RoomNum, current: RoomNum) -> bool {
+pub fn is_adj(next: RoomNum, current: RoomNum) -> bool {
     if current > 0 && current <= MAP.len() {
         let adj_rooms = MAP[current - 1];
         let adj1 = adj_rooms[0];
@@ -59,12 +59,12 @@ mod map_tests {
     // able to move to the room (current + 1).
     #[quickcheck]
     fn can_move_to_next_room_num_property(current: RoomNum) -> bool {
-        let can_move = can_move(current, current + 1);
+        let is_adj = is_adj(current, current + 1);
 
         if current > 0 && current < MAP.len() {
-            can_move
+            is_adj
         } else {
-            !can_move
+            !is_adj
         }
     }
 

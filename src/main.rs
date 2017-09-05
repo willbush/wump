@@ -31,8 +31,7 @@ fn main() {
         if is_cheating {
             game.enable_cheat_mode();
         }
-        let (_, run_result) = game.run();
-        println!("{}", run_result);
+        game.run();
     } else {
         let mut director = &mut PlayerDirector;
         let provider = &RandProvider;

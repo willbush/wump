@@ -1,7 +1,7 @@
 use std::fmt;
 use rand::{thread_rng, Rng};
 use message::{Message, Prompt};
-use map::{adj_rooms_to, can_move, RoomNum, MAP};
+use map::{adj_rooms_to, is_adj, RoomNum, MAP};
 use util::*;
 
 pub struct Game<'a, D: Director + 'a, P: Provider + 'a> {
@@ -33,6 +33,7 @@ impl<'a, D, P> Game<'a, D, P>
         }
     }
 
+    #[allow(dead_code)]
     fn new_with_initial_state(director: &'a mut D, provider: &'a P, state: State) -> Self {
         Game {
             player: Player { room: state.player },
@@ -65,7 +66,7 @@ impl<'a, D, P> Game<'a, D, P>
             let action = self.director.next(&state);
 
             match action {
-                Action::Move(next_room) if can_move(self.player.room, next_room) => {
+                Action::Move(next_room) if is_adj(self.player.room, next_room) => {
                     if let Some(run_result) = self.move_player(next_room) {
                         return run_result;
                     }
@@ -218,6 +219,7 @@ struct Player {
 }
 
 impl Player {
+    #[allow(dead_code)]
     fn new(room: RoomNum) -> Self {
         Player { room: room }
     }
@@ -260,7 +262,7 @@ mod game_tests {
     }
 
     impl Director for DirectorMock {
-        fn next(&mut self, state: &State) -> Action {
+        fn next(&mut self, _: &State) -> Action {
             match self.actions.pop() {
                 Some(action) => action,
                 None => panic!("too many expected actions")

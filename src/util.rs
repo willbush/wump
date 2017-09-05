@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use rand::{thread_rng, Rng};
 use std::io;
 use std::io::Write;
-use map::{can_move, RoomNum, MAP};
+use map::{is_adj, RoomNum, MAP};
 
 pub fn get_adj_room_to(room: RoomNum) -> RoomNum {
     print("Where to? ");
@@ -11,14 +11,16 @@ pub fn get_adj_room_to(room: RoomNum) -> RoomNum {
         let input = read_sanitized_line();
 
         match input.parse::<RoomNum>() {
-            Ok(next) if can_move(room, next) => return next,
+            Ok(next) if is_adj(room, next) => return next,
             _ => print("Not Possible - Where to? ")
         }
     }
 }
 
 // Reads a line from stdin, trims it, and returns it as upper case.
-pub fn read_sanitized_line() -> String { read_trimed_line().to_uppercase() }
+pub fn read_sanitized_line() -> String {
+    read_trimed_line().to_uppercase()
+}
 
 pub fn read_trimed_line() -> String {
     let mut input = String::new();

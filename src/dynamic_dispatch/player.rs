@@ -1,9 +1,9 @@
 use message::Prompt;
 use map::RoomNum;
-use dynamic_dispatch::game::{Game, RunResult, State};
-use dynamic_dispatch::pit::BottomlessPit;
+use dynamic_dispatch::game::State;
 use map::adj_rooms_to;
-use util::{print, read_sanitized_line, get_adj_room_to};
+use util::{get_adj_room_to, print, read_sanitized_line};
+use std::cell::Cell;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
@@ -12,16 +12,19 @@ pub enum Action {
 }
 
 pub struct Player {
-    pub room: RoomNum,
+    pub room: Cell<RoomNum>,
     director: Box<Director>
 }
 
 impl Player {
     pub fn new(room: RoomNum) -> Self {
-        Player { director: box PlayerDirector, room: room }
+        Player {
+            director: box PlayerDirector,
+            room: Cell::new(room)
+        }
     }
 
-    pub fn get_action(&mut self, state: &State) -> Action {
+    pub fn get_action(&self, state: &State) -> Action {
         self.director.next(state)
     }
 }
@@ -52,6 +55,7 @@ impl Director for PlayerDirector {
 
 #[cfg(test)]
 mod player_tests {
+    use dynamic_dispatch::game::{Game, RunResult};
     use super::*;
 
     struct DirectorMock {
@@ -87,7 +91,7 @@ mod player_tests {
         let mock = box DirectorMock { actions: actions };
 
         let player = Player {
-            room: 1,
+            room: Cell::new(1),
             director: mock
         };
         let mut game = Game::new_with_player(player, 19, 20);
@@ -104,7 +108,7 @@ mod player_tests {
         let mock = box DirectorMock { actions: actions };
 
         let player = Player {
-            room: 1,
+            room: Cell::new(1),
             director: mock
         };
 
@@ -120,7 +124,7 @@ mod player_tests {
         ];
         let (actual_states, result) = game.run();
 
-        assert_eq!(RunResult::DeathByBottomlessPit, result);
+        assert_eq!(RunResult::PlayerDeath, result);
         assert_eq!(expected_states, actual_states);
     }
 
