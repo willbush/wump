@@ -14,7 +14,7 @@ mod util;
 mod map;
 
 use static_dispatch::game::{Game as SdGame, PlayerDirector, RandProvider};
-// use dynamic_dispatch::game::Game as DdGame;
+use dynamic_dispatch::game::Game as DdGame;
 use message::Logo;
 use std::env;
 use std::{thread, time};
@@ -24,11 +24,15 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
     let is_cheating = args.len() > 1 && &args[1] == "cheat";
-    let is_sd_game = args.len() > 2 && &args[2] == "dd";
+    let is_dynamic_dispatch_game = args.len() > 2 && &args[2] == "dd";
 
-    if is_sd_game {
-        // let mut game = DdGame;
-        // game.run();
+    if is_dynamic_dispatch_game {
+        let mut game = DdGame::new();
+        if is_cheating {
+            game.enable_cheat_mode();
+        }
+        let (_, run_result) = game.run();
+        println!("{}", run_result);
     } else {
         let mut director = &mut PlayerDirector;
         let provider = &RandProvider;

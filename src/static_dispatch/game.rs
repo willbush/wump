@@ -52,7 +52,9 @@ impl<'a, D, P> Game<'a, D, P>
         }
     }
 
-    pub fn enable_cheat_mode(&mut self) { self.is_cheating = true; }
+    pub fn enable_cheat_mode(&mut self) {
+        self.is_cheating = true;
+    }
 
     pub fn run(&mut self) -> RunResult {
         loop {
@@ -112,7 +114,9 @@ impl<'a, D, P> Game<'a, D, P>
 impl<'a, D, P> PartialEq for Game<'a, D, P>
     where D: Director,
           P: 'a + Provider {
-    fn eq(&self, other: &Game<D, P>) -> bool { self.get_state() == other.get_state() }
+    fn eq(&self, other: &Game<D, P>) -> bool {
+        self.get_state() == other.get_state()
+    }
 }
 
 impl<'a, D, P> fmt::Debug for Game<'a, D, P>
@@ -214,7 +218,9 @@ struct Player {
 }
 
 impl Player {
-    fn new(room: RoomNum) -> Self { Player { room: room } }
+    fn new(room: RoomNum) -> Self {
+        Player { room: room }
+    }
 }
 
 struct BottomlessPit {
@@ -232,13 +238,17 @@ struct SuperBat<'a, P: 'a + Provider> {
 
 impl<'a, P> SuperBat<'a, P>
     where P: Provider {
-    fn snatch(&self, player: &mut Player) { player.room = self.provider.get_room(); }
+    fn snatch(&self, player: &mut Player) {
+        player.room = self.provider.get_room();
+    }
 }
 
 pub struct RandProvider;
 
 impl Provider for RandProvider {
-    fn get_room(&self) -> RoomNum { thread_rng().gen_range(1, MAP.len() + 1) }
+    fn get_room(&self) -> RoomNum {
+        thread_rng().gen_range(1, MAP.len() + 1)
+    }
 }
 
 #[cfg(test)]
@@ -293,7 +303,9 @@ mod game_tests {
     struct DummyProvider;
 
     impl Provider for DummyProvider {
-        fn get_room(&self) -> RoomNum { 0 }
+        fn get_room(&self) -> RoomNum {
+            0
+        }
     }
 
     struct RandRoomProvider {
@@ -317,7 +329,9 @@ mod game_tests {
     }
 
     impl Provider for MockProvider {
-        fn get_room(&self) -> RoomNum { self.snatch_to_room }
+        fn get_room(&self) -> RoomNum {
+            self.snatch_to_room
+        }
     }
 
     #[test]
