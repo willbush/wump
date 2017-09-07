@@ -84,7 +84,9 @@ mod player_tests {
             turn: 0,
             player: 1,
             pit1: 19,
-            pit2: 20
+            pit2: 18,
+            bat1: 19,
+            bat2: 20
         };
         let expected_states = create_player_state_trans_from(&initial_state, &vec![2, 3, 12]);
 
@@ -94,7 +96,7 @@ mod player_tests {
             room: Cell::new(1),
             director: mock
         };
-        let mut game = Game::new_with_player(player, 19, 20);
+        let mut game = Game::new_with_player(player, initial_state);
         let (actual_states, result) = game.run();
 
         assert_eq!(RunResult::UserQuit, result);
@@ -111,17 +113,18 @@ mod player_tests {
             room: Cell::new(1),
             director: mock
         };
+        let initial_state = State {
+            turn: 0,
+            player: 1,
+            pit1: 2,
+            pit2: 18,
+            bat1: 19,
+            bat2: 20
+        };
 
-        let mut game = Game::new_with_player(player, 2, 20);
+        let mut game = Game::new_with_player(player, initial_state.to_owned());
 
-        let expected_states = vec![
-            State {
-                turn: 0,
-                player: 1,
-                pit1: 2,
-                pit2: 20
-            },
-        ];
+        let expected_states = vec![initial_state];
         let (actual_states, result) = game.run();
 
         assert_eq!(RunResult::PlayerDeath, result);
@@ -141,7 +144,9 @@ mod player_tests {
                 turn: i + 1,
                 player: *room,
                 pit1: initial_state.pit1,
-                pit2: initial_state.pit2
+                pit2: initial_state.pit2,
+                bat1: initial_state.bat1,
+                bat2: initial_state.bat2
             });
         }
         result

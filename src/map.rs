@@ -1,3 +1,4 @@
+use rand::{thread_rng, Rng};
 
 // room number as usize so it can index into the map.
 pub type RoomNum = usize;
@@ -43,6 +44,10 @@ pub fn is_adj(next: RoomNum, current: RoomNum) -> bool {
     } else {
         false
     }
+}
+
+pub fn rand_room() -> RoomNum {
+    thread_rng().gen_range(1, MAP.len() + 1)
 }
 
 pub fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
