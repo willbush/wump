@@ -17,12 +17,18 @@ impl SuperBat {
 }
 
 impl Hazzard for SuperBat {
-    fn update(&self, player_room: RoomNum) -> Option<UpdateResult> {
+    fn try_update(&self, player_room: RoomNum) -> Option<UpdateResult> {
         if self.room == player_room {
             let else_where = self.provider.get_room();
             Some(UpdateResult::SnatchTo(else_where))
-        } else if is_adj(player_room, self.room) {
-            Some(UpdateResult::Warning(Warning::BAT.into()))
+        } else {
+            None
+        }
+    }
+
+    fn try_warn(&self, player_room: RoomNum) -> Option<&str> {
+        if is_adj(player_room, self.room) {
+            Some(Warning::BAT)
         } else {
             None
         }
@@ -67,27 +73,20 @@ mod bat_tests {
         let bat = SuperBat { room: 1, provider };
         let player_room = 2;
 
-        assert_eq!(
-            Some(UpdateResult::Warning(Warning::BAT.into())),
-            bat.update(player_room)
-        );
+        assert_eq!(Some(Warning::BAT), bat.try_warn(player_room));
     }
 
     #[test]
     fn can_snatch_player() {
         let first = 15;
         let second = 20;
-        let provider = box MockProvider { rooms: RefCell::new(vec![second, first]) };
+        let provider = box MockProvider {
+            rooms: RefCell::new(vec![second, first])
+        };
         let room = 1;
         let bat = SuperBat { room, provider };
 
-        assert_eq!(
-            Some(UpdateResult::SnatchTo(first)),
-            bat.update(room)
-        );
-        assert_eq!(
-            Some(UpdateResult::SnatchTo(second)),
-            bat.update(room)
-        );
+        assert_eq!(Some(UpdateResult::SnatchTo(first)), bat.try_update(room));
+        assert_eq!(Some(UpdateResult::SnatchTo(second)), bat.try_update(room));
     }
 }

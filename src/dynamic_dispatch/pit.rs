@@ -7,12 +7,17 @@ pub struct BottomlessPit {
 }
 
 impl Hazzard for BottomlessPit {
-    fn update(&self, player_room: RoomNum) -> Option<UpdateResult> {
+    fn try_update(&self, player_room: RoomNum) -> Option<UpdateResult> {
         if player_room == self.room {
-            let death_msg = format!("{}\n{}", Message::FELL_IN_PIT, Message::LOSE);
-            Some(UpdateResult::Death(death_msg.into()))
-        } else if is_adj(player_room, self.room) {
-            Some(UpdateResult::Warning(Warning::PIT.into()))
+            Some(UpdateResult::Death(Message::FELL_IN_PIT))
+        } else {
+            None
+        }
+    }
+
+    fn try_warn(&self, player_room: RoomNum) -> Option<&str> {
+        if is_adj(player_room, self.room) {
+            Some(Warning::PIT)
         } else {
             None
         }
@@ -27,7 +32,7 @@ mod pit_tests {
     fn can_do_nothing() {
         let pit = BottomlessPit { room: 1 };
         let player_room = 20;
-        let update_result = pit.update(player_room);
+        let update_result = pit.try_update(player_room);
         assert_eq!(None, update_result);
     }
 
@@ -35,10 +40,9 @@ mod pit_tests {
     fn can_give_warning() {
         let pit = BottomlessPit { room: 1 };
         let player_room = 2;
-        let update_result = pit.update(player_room);
         assert_eq!(
-            Some(UpdateResult::Warning(Warning::PIT.into())),
-            update_result
+            Some(Warning::PIT),
+            pit.try_warn(player_room)
         );
     }
 
@@ -46,9 +50,8 @@ mod pit_tests {
     fn can_kill_player() {
         let pit = BottomlessPit { room: 1 };
         let player_room = 1;
-        let update_result = pit.update(player_room);
+        let update_result = pit.try_update(player_room);
 
-        let death_msg = format!("{}\n{}", Message::FELL_IN_PIT, Message::LOSE);
-        assert_eq!(Some(UpdateResult::Death(death_msg.into())), update_result);
+        assert_eq!(Some(UpdateResult::Death(Message::FELL_IN_PIT)), update_result);
     }
 }

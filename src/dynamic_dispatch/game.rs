@@ -6,16 +6,15 @@ use dynamic_dispatch::bat::SuperBat;
 use util::*;
 use std::fmt;
 use std::rc::Rc;
-use std::borrow::Cow;
 
 pub trait Hazzard {
-    fn update(&self, player_room: RoomNum) -> Option<UpdateResult>;
+    fn try_update(&self, player_room: RoomNum) -> Option<UpdateResult>;
+    fn try_warn(&self, player_room: RoomNum) -> Option<&str>;
 }
 
 #[derive(Debug, PartialEq)]
-pub enum UpdateResult<'a> {
-    Warning(Cow<'a, str>),
-    Death(Cow<'a, str>),
+pub enum UpdateResult {
+    Death(&'static str),
     SnatchTo(RoomNum)
 }
 
@@ -99,8 +98,9 @@ impl Game {
             if self.is_cheating {
                 println!("{}", self);
             }
-            let player_room = self.player.room.get();
-            if let Some(run_result) = self.update(player_room) {
+            self.print_any_hazzard_warnings();
+
+            if let Some(run_result) = self.update() {
                 return (states, run_result);
             }
             let state = self.get_state();
@@ -114,6 +114,13 @@ impl Game {
         }
     }
 
+    fn print_any_hazzard_warnings(&self) {
+        self.hazzards
+            .iter()
+            .filter_map(|h| h.try_warn(self.player.room.get()))
+            .for_each(|warning| println!("{}", warning));
+    }
+
     fn process(&mut self, action: &Action) -> Option<RunResult> {
         match *action {
             Action::Move(next_room) if is_adj(self.player.room.get(), next_room) => {
@@ -125,22 +132,28 @@ impl Game {
         }
     }
 
-    fn update(&mut self, player_room: RoomNum) -> Option<RunResult> {
-        for h in &self.hazzards {
-            if let Some(update_result) = h.update(player_room) {
-                match update_result {
-                    UpdateResult::Warning(msg) => {
-                        println!("{}", msg);
-                    }
-                    UpdateResult::Death(msg) => {
-                        println!("{}", msg);
-                        return Some(RunResult::PlayerDeath);
-                    }
-                    UpdateResult::SnatchTo(new_room) => {
-                        self.player.room.replace(new_room);
-                        println!("{}", Message::BAT_SNATCH);
+    fn update(&mut self) -> Option<RunResult> {
+        loop {
+            let mut is_snatched = false;
+
+            for h in &self.hazzards {
+                if let Some(update_result) = h.try_update(self.player.room.get()) {
+                    match update_result {
+                        UpdateResult::Death(msg) => {
+                            println!("{}", msg);
+                            println!("{}", Message::LOSE);
+                            return Some(RunResult::PlayerDeath);
+                        }
+                        UpdateResult::SnatchTo(new_room) => {
+                            self.player.room.replace(new_room);
+                            is_snatched = true;
+                            println!("{}", Message::BAT_SNATCH);
+                        }
                     }
                 }
+            }
+            if !is_snatched {
+                break;
             }
         }
         None
