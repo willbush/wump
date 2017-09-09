@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "./game_test.rs"]
+mod game_test;
+
 use map::{is_adj, RoomNum};
 use message::Message;
 use dynamic_dispatch::player::{Action, Player};
@@ -14,19 +18,18 @@ pub trait Hazzard {
 
 #[derive(Debug, PartialEq)]
 pub enum UpdateResult {
-    Death(&'static str),
+    FellInPit,
     SnatchTo(RoomNum)
 }
 
 #[derive(Debug, PartialEq)]
 pub enum RunResult {
     UserQuit,
-    PlayerDeath
+    DeathByBottomlessPit
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct State {
-    pub turn: usize,
     pub player: RoomNum,
     pub pit1: RoomNum,
     pub pit2: RoomNum,
@@ -35,7 +38,6 @@ pub struct State {
 }
 
 pub struct Game {
-    turn: usize,
     pub player: Rc<Player>,
     pub pit1: Rc<BottomlessPit>,
     pub pit2: Rc<BottomlessPit>,
@@ -59,7 +61,6 @@ impl Game {
             vec![pit1.clone(), pit2.clone(), bat1.clone(), bat2.clone()];
 
         Game {
-            turn: 0,
             player,
             pit1,
             pit2,
@@ -77,10 +78,10 @@ impl Game {
         let pit2 = Rc::new(BottomlessPit { room: s.pit2 });
         let bat1 = Rc::new(SuperBat::new(s.bat1));
         let bat2 = Rc::new(SuperBat::new(s.bat2));
-        let hazzards: Vec<Rc<Hazzard>> = vec![pit1.clone(), pit2.clone()];
+        let hazzards: Vec<Rc<Hazzard>> =
+            vec![pit1.clone(), pit2.clone(), bat1.clone(), bat2.clone()];
 
         Game {
-            turn: 0,
             player,
             pit1,
             pit2,
@@ -110,7 +111,6 @@ impl Game {
             if let Some(run_result) = self.process(&action) {
                 return (states, run_result);
             }
-            self.turn += 1;
         }
     }
 
@@ -139,10 +139,8 @@ impl Game {
             for h in &self.hazzards {
                 if let Some(update_result) = h.try_update(self.player.room.get()) {
                     match update_result {
-                        UpdateResult::Death(msg) => {
-                            println!("{}", msg);
-                            println!("{}", Message::LOSE);
-                            return Some(RunResult::PlayerDeath);
+                        UpdateResult::FellInPit => {
+                            return Some(RunResult::DeathByBottomlessPit);
                         }
                         UpdateResult::SnatchTo(new_room) => {
                             self.player.room.replace(new_room);
@@ -161,7 +159,6 @@ impl Game {
 
     fn get_state(&self) -> State {
         State {
-            turn: self.turn,
             player: self.player.room.get(),
             pit1: self.pit1.room,
             pit2: self.pit2.room,
@@ -179,13 +176,24 @@ impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "player turn: {}, rooms: player {}, pit1: {}, pit2: {}, bat1: {}, bat2: {}.",
-            self.turn,
+            "player rooms: player {}, pit1: {}, pit2: {}, bat1: {}, bat2: {}.",
             self.player.room.get(),
             self.pit1.room,
             self.pit2.room,
             self.bat1.room,
             self.bat2.room
         )
+    }
+}
+
+impl fmt::Display for RunResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let msg = match *self {
+            RunResult::DeathByBottomlessPit => {
+                format!("{}\n{}\n", Message::FELL_IN_PIT, Message::LOSE)
+            }
+            RunResult::UserQuit => String::from("")
+        };
+        write!(f, "{}", msg)
     }
 }
