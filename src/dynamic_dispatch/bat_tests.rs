@@ -1,7 +1,7 @@
 use super::*;
 use std::cell::RefCell;
 
-pub struct MockProvider {
+struct MockProvider {
     pub rooms: RefCell<Vec<RoomNum>>
 }
 
@@ -33,4 +33,13 @@ fn can_snatch_player() {
 
     assert_eq!(Some(UpdateResult::SnatchTo(first)), bat.try_update(room));
     assert_eq!(Some(UpdateResult::SnatchTo(second)), bat.try_update(room));
+}
+
+pub fn create_mock_provided_bat(room: RoomNum, mut snatch_order: Vec<RoomNum>) -> SuperBat {
+    // reverse snatch order because they are popped to get the next room to snatch to.
+    snatch_order.reverse();
+    SuperBat {
+        room,
+        provider: box MockProvider { rooms: RefCell::new(snatch_order) }
+    }
 }

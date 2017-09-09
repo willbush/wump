@@ -1,36 +1,29 @@
-use dynamic_dispatch::player::player_tests::MockDirector;
-use dynamic_dispatch::bat::bat_tests::MockProvider;
+use dynamic_dispatch::player::player_tests::create_mock_directed_player;
+use dynamic_dispatch::bat::bat_tests::create_mock_provided_bat;
 use dynamic_dispatch::bat::SuperBat;
 use dynamic_dispatch::pit::BottomlessPit;
-use dynamic_dispatch::player::{Action, Player};
-use std::cell::RefCell;
-use std::cell::Cell;
+use dynamic_dispatch::player::Action;
 use std::rc::Rc;
 use super::*;
 
 #[test]
 fn player_can_get_multi_snatched_into_pit() {
+    // player moves into bat room, gets snatched back into the bat room,
+    // then snatched to pit room.
+    let player_room = 1;
     let bat_room = 2;
     let pit_room = 3;
 
-    // move into super bats.
-    let actions = vec![Action::Move(bat_room)];
-    let mock = box MockDirector { actions: RefCell::new(actions) };
+    let player = Rc::new(create_mock_directed_player(
+        player_room,
+        vec![Action::Move(bat_room)]
+    ));
 
-    // setup super bat provider to tell the bat to snatch to room 2 and then 3.
-    let first_snatch = bat_room;
-    let second_snatch = pit_room;
-    let provider = box MockProvider {
-        rooms: RefCell::new(vec![second_snatch, first_snatch])
-    };
+    let super_bat = create_mock_provided_bat(bat_room, vec![bat_room, pit_room]);
 
-    let player = Rc::new(Player {
-        room: Cell::new(1),
-        director: mock
-    });
     let pit1 = Rc::new(BottomlessPit { room: pit_room });
     let pit2 = Rc::new(BottomlessPit { room: 19 });
-    let bat1 = Rc::new(SuperBat { room: bat_room, provider });
+    let bat1 = Rc::new(super_bat);
     let bat2 = Rc::new(SuperBat::new(20));
 
     let hazzards: Vec<Rc<Hazzard>> = vec![pit1.clone(), pit2.clone(), bat1.clone(), bat2.clone()];

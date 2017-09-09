@@ -2,7 +2,7 @@ use dynamic_dispatch::game::{Game, RunResult};
 use std::cell::RefCell;
 use super::*;
 
-pub struct MockDirector {
+struct MockDirector {
     pub actions: RefCell<Vec<Action>>
 }
 
@@ -15,6 +15,7 @@ impl Director for MockDirector {
 
 #[test]
 fn can_move_player_and_quit() {
+    let player_room = 1;
     // start in room 1, move until in room 12, and quit.
     // actions are in reverse order because they are popped to get the next.
     let actions = vec![
@@ -23,8 +24,10 @@ fn can_move_player_and_quit() {
         Action::Move(3),
         Action::Move(2),
     ];
+
+    let player = create_mock_directed_player(player_room, actions);
     let initial_state = State {
-        player: 1,
+        player: player_room,
         pit1: 19,
         pit2: 18,
         bat1: 19,
@@ -32,12 +35,6 @@ fn can_move_player_and_quit() {
     };
     let expected_states = create_player_state_trans_from(&initial_state, &vec![2, 3, 12]);
 
-    let mock = box MockDirector { actions: RefCell::new(actions) };
-
-    let player = Player {
-        room: Cell::new(1),
-        director: mock
-    };
     let mut game = Game::new_with_player(player, initial_state);
     let (actual_states, result) = game.run();
 
@@ -48,13 +45,8 @@ fn can_move_player_and_quit() {
 #[test]
 fn can_move_and_fall_in_pit() {
     // move into bottomless pit.
-    let actions = vec![Action::Move(2)];
-    let mock = box MockDirector { actions: RefCell::new(actions) };
+    let player = create_mock_directed_player(1, vec![Action::Move(2)]);
 
-    let player = Player {
-        room: Cell::new(1),
-        director: mock
-    };
     let initial_state = State {
         player: 1,
         pit1: 2,
@@ -70,6 +62,13 @@ fn can_move_and_fall_in_pit() {
 
     assert_eq!(RunResult::DeathByBottomlessPit, result);
     assert_eq!(expected_states, actual_states);
+}
+
+pub fn create_mock_directed_player(room: RoomNum, actions: Vec<Action>) -> Player {
+    Player {
+        room: Cell::new(room),
+        director: box MockDirector { actions: RefCell::new(actions) }
+    }
 }
 
 /// Create state transitions starting from the given initial state

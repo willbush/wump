@@ -8,7 +8,7 @@ use dynamic_dispatch::game::{Hazzard, UpdateResult};
 
 pub struct SuperBat {
     pub room: RoomNum,
-    pub provider: Box<RoomProvider>
+    provider: Box<RoomProvider>
 }
 
 impl SuperBat {

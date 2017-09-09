@@ -17,7 +17,7 @@ pub enum Action {
 
 pub struct Player {
     pub room: Cell<RoomNum>,
-    pub director: Box<Director>
+    director: Box<Director>
 }
 
 impl Player {
