@@ -136,25 +136,31 @@ impl Game {
         loop {
             let mut is_snatched = false;
 
-            for h in &self.hazzards {
-                if let Some(update_result) = h.try_update(self.player.room.get()) {
-                    match update_result {
-                        UpdateResult::FellInPit => {
-                            return Some(RunResult::DeathByBottomlessPit);
-                        }
-                        UpdateResult::SnatchTo(new_room) => {
-                            self.player.room.replace(new_room);
-                            is_snatched = true;
-                            println!("{}", Message::BAT_SNATCH);
-                        }
+            if let Some(update_result) = self.try_update() {
+                match update_result {
+                    UpdateResult::FellInPit => {
+                        return Some(RunResult::DeathByBottomlessPit);
+                    }
+                    UpdateResult::SnatchTo(new_room) => {
+                        self.player.room.replace(new_room);
+                        is_snatched = true;
+                        println!("{}", Message::BAT_SNATCH);
                     }
                 }
             }
+
             if !is_snatched {
                 break;
             }
         }
         None
+    }
+
+    fn try_update(&mut self) -> Option<UpdateResult> {
+        self.hazzards
+            .iter()
+            .filter_map(|h| h.try_update(self.player.room.get()))
+            .next()
     }
 
     fn get_state(&self) -> State {
