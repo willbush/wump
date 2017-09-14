@@ -1,4 +1,4 @@
-use dynamic_dispatch::game::{Game, RunResult};
+use game::{Game, RunResult};
 use std::cell::RefCell;
 use super::*;
 

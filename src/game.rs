@@ -4,9 +4,9 @@ mod game_test;
 
 use map::{is_adj, RoomNum};
 use message::Message;
-use dynamic_dispatch::player::{Action, Player};
-use dynamic_dispatch::pit::BottomlessPit;
-use dynamic_dispatch::bat::SuperBat;
+use player::{Action, Player};
+use pit::BottomlessPit;
+use bat::SuperBat;
 use util::*;
 use std::fmt;
 

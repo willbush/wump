@@ -3,7 +3,7 @@
 pub mod wumpus_tests;
 
 use message::Warning;
-use dynamic_dispatch::game::{Hazzard, RunResult, UpdateResult};
+use game::{Hazzard, RunResult, UpdateResult};
 use map::{is_adj, RoomNum};
 use std::cell::Cell;
 

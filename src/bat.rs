@@ -4,7 +4,7 @@ pub mod bat_tests;
 
 use map::{is_adj, rand_room, RoomNum};
 use message::Warning;
-use dynamic_dispatch::game::{Hazzard, UpdateResult};
+use game::{Hazzard, UpdateResult};
 
 pub trait RoomProvider {
     fn get_room(&self) -> RoomNum;

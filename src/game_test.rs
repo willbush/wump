@@ -1,8 +1,8 @@
-use dynamic_dispatch::player::player_tests::create_mock_directed_player;
-use dynamic_dispatch::bat::bat_tests::create_mock_provided_bat;
-use dynamic_dispatch::bat::SuperBat;
-use dynamic_dispatch::pit::BottomlessPit;
-use dynamic_dispatch::player::Action;
+use player::player_tests::create_mock_directed_player;
+use bat::bat_tests::create_mock_provided_bat;
+use bat::SuperBat;
+use pit::BottomlessPit;
+use player::Action;
 use super::*;
 
 #[test]

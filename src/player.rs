@@ -4,7 +4,7 @@ pub mod player_tests;
 
 use message::Prompt;
 use map::RoomNum;
-use dynamic_dispatch::game::State;
+use game::State;
 use map::adj_rooms_to;
 use util::{get_adj_room_to, print, read_sanitized_line};
 use std::cell::Cell;
