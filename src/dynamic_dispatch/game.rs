@@ -9,23 +9,29 @@ use dynamic_dispatch::pit::BottomlessPit;
 use dynamic_dispatch::bat::SuperBat;
 use util::*;
 use std::fmt;
-use std::rc::Rc;
 
 pub trait Hazzard {
     fn try_update(&self, player_room: RoomNum) -> Option<UpdateResult>;
     fn try_warn(&self, player_room: RoomNum) -> Option<&str>;
 }
 
+pub trait RoomProvider {
+    fn get_room(&self) -> RoomNum;
+}
+
 #[derive(Debug, PartialEq)]
 pub enum UpdateResult {
-    FellInPit,
-    SnatchTo(RoomNum)
+    Death(RunResult),
+    SnatchTo(RoomNum),
+    BumpAndLive,
+    BumpAndDie
 }
 
 #[derive(Debug, PartialEq)]
 pub enum RunResult {
     UserQuit,
-    DeathByBottomlessPit
+    DeathByBottomlessPit,
+    DeathByWumpus
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -38,34 +44,35 @@ pub struct State {
 }
 
 pub struct Game {
-    pub player: Rc<Player>,
-    pub pit1: Rc<BottomlessPit>,
-    pub pit2: Rc<BottomlessPit>,
-    pub bat1: Rc<SuperBat>,
-    pub bat2: Rc<SuperBat>,
-    hazzards: Vec<Rc<Hazzard>>,
+    pub player: Box<Player>,
+    pub pit1_room: RoomNum,
+    pub pit2_room: RoomNum,
+    pub bat1_room: RoomNum,
+    pub bat2_room: RoomNum,
+    hazzards: Vec<Box<Hazzard>>,
     is_cheating: bool
 }
 
 impl Game {
     pub fn new() -> Self {
-        let (player, pit1, pit2, bat1, bat2) = gen_unique_rooms();
+        let (player_room, pit1_room, pit2_room, bat1_room, bat2_room) =
+            gen_unique_rooms();
 
-        let player = Rc::new(Player::new(player));
-        let pit1 = Rc::new(BottomlessPit { room: pit1 });
-        let pit2 = Rc::new(BottomlessPit { room: pit2 });
-        let bat1 = Rc::new(SuperBat::new(bat1));
-        let bat2 = Rc::new(SuperBat::new(bat2));
+        let player = box Player::new(player_room);
 
-        let hazzards: Vec<Rc<Hazzard>> =
-            vec![pit1.clone(), pit2.clone(), bat1.clone(), bat2.clone()];
+        let hazzards: Vec<Box<Hazzard>> = vec![
+            box BottomlessPit { room: pit1_room },
+            box BottomlessPit { room: pit2_room },
+            box SuperBat::new(bat1_room),
+            box SuperBat::new(bat2_room),
+        ];
 
         Game {
             player,
-            pit1,
-            pit2,
-            bat1,
-            bat2,
+            pit1_room,
+            pit2_room,
+            bat1_room,
+            bat2_room,
             hazzards,
             is_cheating: false
         }
@@ -73,20 +80,19 @@ impl Game {
 
     #[allow(dead_code)]
     pub fn new_with_player(p: Player, s: State) -> Self {
-        let player = Rc::new(p);
-        let pit1 = Rc::new(BottomlessPit { room: s.pit1 });
-        let pit2 = Rc::new(BottomlessPit { room: s.pit2 });
-        let bat1 = Rc::new(SuperBat::new(s.bat1));
-        let bat2 = Rc::new(SuperBat::new(s.bat2));
-        let hazzards: Vec<Rc<Hazzard>> =
-            vec![pit1.clone(), pit2.clone(), bat1.clone(), bat2.clone()];
+        let hazzards: Vec<Box<Hazzard>> = vec![
+            box BottomlessPit { room: s.pit1 },
+            box BottomlessPit { room: s.pit2 },
+            box SuperBat::new(s.bat1),
+            box SuperBat::new(s.bat2),
+        ];
 
         Game {
-            player,
-            pit1,
-            pit2,
-            bat1,
-            bat2,
+            player: box p,
+            pit1_room: s.pit1,
+            pit2_room: s.pit2,
+            bat1_room: s.bat1,
+            bat2_room: s.bat2,
             hazzards,
             is_cheating: false
         }
@@ -138,13 +144,20 @@ impl Game {
 
             if let Some(update_result) = self.try_update() {
                 match update_result {
-                    UpdateResult::FellInPit => {
-                        return Some(RunResult::DeathByBottomlessPit);
+                    UpdateResult::Death(run_result) => {
+                        return Some(run_result);
                     }
                     UpdateResult::SnatchTo(new_room) => {
                         self.player.room.replace(new_room);
                         is_snatched = true;
                         println!("{}", Message::BAT_SNATCH);
+                    }
+                    UpdateResult::BumpAndLive => {
+                        println!("{}", Message::WUMPUS_BUMP);
+                    }
+                    UpdateResult::BumpAndDie => {
+                        println!("{}", Message::WUMPUS_BUMP);
+                        return Some(RunResult::DeathByWumpus);
                     }
                 }
             }
@@ -166,10 +179,10 @@ impl Game {
     fn get_state(&self) -> State {
         State {
             player: self.player.room.get(),
-            pit1: self.pit1.room,
-            pit2: self.pit2.room,
-            bat1: self.bat1.room,
-            bat2: self.bat2.room
+            pit1: self.pit1_room,
+            pit2: self.pit2_room,
+            bat1: self.bat1_room,
+            bat2: self.bat2_room
         }
     }
 
@@ -184,10 +197,10 @@ impl fmt::Display for Game {
             f,
             "player rooms: player {}, pit1: {}, pit2: {}, bat1: {}, bat2: {}.",
             self.player.room.get(),
-            self.pit1.room,
-            self.pit2.room,
-            self.bat1.room,
-            self.bat2.room
+            self.pit1_room,
+            self.pit2_room,
+            self.bat1_room,
+            self.bat2_room
         )
     }
 }
@@ -198,6 +211,7 @@ impl fmt::Display for RunResult {
             RunResult::DeathByBottomlessPit => {
                 format!("{}\n{}\n", Message::FELL_IN_PIT, Message::LOSE)
             }
+            RunResult::DeathByWumpus => format!("{}\n{}\n", Message::WUMPUS_GOT_YOU, Message::LOSE),
             RunResult::UserQuit => String::from("")
         };
         write!(f, "{}", msg)

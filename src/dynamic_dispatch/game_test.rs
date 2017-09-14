@@ -3,7 +3,6 @@ use dynamic_dispatch::bat::bat_tests::create_mock_provided_bat;
 use dynamic_dispatch::bat::SuperBat;
 use dynamic_dispatch::pit::BottomlessPit;
 use dynamic_dispatch::player::Action;
-use std::rc::Rc;
 use super::*;
 
 #[test]
@@ -11,29 +10,26 @@ fn player_can_get_multi_snatched_into_pit() {
     // player moves into bat room, gets snatched back into the bat room,
     // then snatched to pit room.
     let player_room = 1;
-    let bat_room = 2;
-    let pit_room = 3;
+    let bat1_room = 2;
+    let bat2_room = 20;
+    let pit1_room = 3;
+    let pit2_room = 19;
 
-    let player = Rc::new(create_mock_directed_player(
-        player_room,
-        vec![Action::Move(bat_room)]
-    ));
+    let player = box create_mock_directed_player(player_room, vec![Action::Move(bat1_room)]);
 
-    let super_bat = create_mock_provided_bat(bat_room, vec![bat_room, pit_room]);
-
-    let pit1 = Rc::new(BottomlessPit { room: pit_room });
-    let pit2 = Rc::new(BottomlessPit { room: 19 });
-    let bat1 = Rc::new(super_bat);
-    let bat2 = Rc::new(SuperBat::new(20));
-
-    let hazzards: Vec<Rc<Hazzard>> = vec![pit1.clone(), pit2.clone(), bat1.clone(), bat2.clone()];
+    let hazzards: Vec<Box<Hazzard>> = vec![
+        box BottomlessPit { room: pit1_room },
+        box BottomlessPit { room: pit2_room },
+        box create_mock_provided_bat(bat1_room, vec![bat1_room, pit1_room]),
+        box SuperBat::new(bat2_room),
+    ];
 
     let mut game = Game {
         player,
-        pit1,
-        pit2,
-        bat1,
-        bat2,
+        pit1_room,
+        pit2_room,
+        bat1_room,
+        bat2_room,
         hazzards,
         is_cheating: false
     };

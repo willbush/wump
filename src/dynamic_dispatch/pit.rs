@@ -1,6 +1,6 @@
 use map::{is_adj, RoomNum};
 use message::Warning;
-use dynamic_dispatch::game::{Hazzard, UpdateResult};
+use dynamic_dispatch::game::{Hazzard, RunResult, UpdateResult};
 
 pub struct BottomlessPit {
     pub room: RoomNum
@@ -9,7 +9,7 @@ pub struct BottomlessPit {
 impl Hazzard for BottomlessPit {
     fn try_update(&self, player_room: RoomNum) -> Option<UpdateResult> {
         if player_room == self.room {
-            Some(UpdateResult::FellInPit)
+            Some(UpdateResult::Death(RunResult::DeathByBottomlessPit))
         } else {
             None
         }
@@ -49,6 +49,7 @@ mod pit_tests {
         let player_room = 1;
         let update_result = pit.try_update(player_room);
 
-        assert_eq!(Some(UpdateResult::FellInPit), update_result);
+        let expected = Some(UpdateResult::Death(RunResult::DeathByBottomlessPit));
+        assert_eq!(expected, update_result);
     }
 }

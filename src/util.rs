@@ -39,17 +39,19 @@ pub fn print(s: &str) {
 pub fn gen_unique_rooms() -> (RoomNum, RoomNum, RoomNum, RoomNum, RoomNum) {
     let mut taken_rooms = HashSet::new();
 
-    let player_room = gen_unique_rand_room(&taken_rooms);
-    taken_rooms.insert(player_room);
-    let pit1_room = gen_unique_rand_room(&taken_rooms);
-    taken_rooms.insert(pit1_room);
-    let pit2_room = gen_unique_rand_room(&taken_rooms);
-    taken_rooms.insert(pit2_room);
-    let bat1_room = gen_unique_rand_room(&taken_rooms);
-    taken_rooms.insert(bat1_room);
-    let bat2_room = gen_unique_rand_room(&taken_rooms);
+    let player = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(player);
+    let pit1 = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(pit1);
+    let pit2 = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(pit2);
+    let bat1 = gen_unique_rand_room(&taken_rooms);
+    taken_rooms.insert(bat1);
+    let bat2 = gen_unique_rand_room(&taken_rooms);
+    // taken_rooms.insert(bat2);
+    // let wumpus = gen_unique_rand_room(&taken_rooms);
 
-    (player_room, pit1_room, pit2_room, bat1_room, bat2_room)
+    (player, pit1, pit2, bat1, bat2)
 }
 
 pub fn gen_unique_rand_room(taken_rooms: &HashSet<RoomNum>) -> RoomNum {

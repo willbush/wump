@@ -1,8 +1,15 @@
 use super::*;
 use std::cell::RefCell;
+use map::RoomNum;
 
 struct MockProvider {
-    pub rooms: RefCell<Vec<RoomNum>>
+    rooms: RefCell<Vec<RoomNum>>
+}
+
+impl MockProvider {
+    fn new(rooms: Vec<RoomNum>) -> Self {
+        MockProvider { rooms: RefCell::new(rooms) }
+    }
 }
 
 impl RoomProvider for MockProvider {
@@ -14,7 +21,7 @@ impl RoomProvider for MockProvider {
 
 #[test]
 fn can_warn_player() {
-    let provider = box MockProvider { rooms: RefCell::new(vec![666]) };
+    let provider = box MockProvider::new(vec![666]);
     let bat = SuperBat { room: 1, provider };
     let player_room = 2;
 
@@ -25,9 +32,7 @@ fn can_warn_player() {
 fn can_snatch_player() {
     let first = 15;
     let second = 20;
-    let provider = box MockProvider {
-        rooms: RefCell::new(vec![second, first])
-    };
+    let provider = box MockProvider::new(vec![second, first]);
     let room = 1;
     let bat = SuperBat { room, provider };
 
@@ -40,6 +45,6 @@ pub fn create_mock_provided_bat(room: RoomNum, mut snatch_order: Vec<RoomNum>) -
     snatch_order.reverse();
     SuperBat {
         room,
-        provider: box MockProvider { rooms: RefCell::new(snatch_order) }
+        provider: box MockProvider::new(snatch_order)
     }
 }

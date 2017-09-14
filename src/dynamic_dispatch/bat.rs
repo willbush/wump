@@ -6,6 +6,10 @@ use map::{is_adj, rand_room, RoomNum};
 use message::Warning;
 use dynamic_dispatch::game::{Hazzard, UpdateResult};
 
+pub trait RoomProvider {
+    fn get_room(&self) -> RoomNum;
+}
+
 pub struct SuperBat {
     pub room: RoomNum,
     provider: Box<RoomProvider>
@@ -37,10 +41,6 @@ impl Hazzard for SuperBat {
             None
         }
     }
-}
-
-pub trait RoomProvider {
-    fn get_room(&self) -> RoomNum;
 }
 
 pub struct BatRoomProvider;
