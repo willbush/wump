@@ -2,16 +2,19 @@
 #[path = "./game_test.rs"]
 mod game_test;
 
-use map::{is_adj, RoomNum};
-use message::Message;
+use std::fmt;
+use std::rc::Rc;
+
 use player::{Action, Player};
+use wumpus::Wumpus;
 use pit::BottomlessPit;
 use bat::SuperBat;
+use map::{is_adj, RoomNum};
+use message::Message;
 use util::*;
-use std::fmt;
 
 pub trait Hazzard {
-    fn try_update(&self, player_room: RoomNum) -> Option<UpdateResult>;
+    fn try_update(&self, state: &State) -> Option<UpdateResult>;
     fn try_warn(&self, player_room: RoomNum) -> Option<&str>;
 }
 
@@ -34,9 +37,10 @@ pub enum RunResult {
     DeathByWumpus
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Default, Debug)]
 pub struct State {
     pub player: RoomNum,
+    pub wumpus: RoomNum,
     pub pit1: RoomNum,
     pub pit2: RoomNum,
     pub bat1: RoomNum,
@@ -45,30 +49,34 @@ pub struct State {
 
 pub struct Game {
     pub player: Box<Player>,
+    pub wumpus: Rc<Wumpus>,
     pub pit1_room: RoomNum,
     pub pit2_room: RoomNum,
     pub bat1_room: RoomNum,
     pub bat2_room: RoomNum,
-    hazzards: Vec<Box<Hazzard>>,
+    hazzards: Vec<Rc<Hazzard>>,
     is_cheating: bool
 }
 
 impl Game {
     pub fn new() -> Self {
-        let (player_room, pit1_room, pit2_room, bat1_room, bat2_room) =
+        let (player_room, wumpus_room, pit1_room, pit2_room, bat1_room, bat2_room) =
             gen_unique_rooms();
 
         let player = box Player::new(player_room);
+        let wumpus = Rc::new(Wumpus::new(wumpus_room));
 
-        let hazzards: Vec<Box<Hazzard>> = vec![
-            box BottomlessPit { room: pit1_room },
-            box BottomlessPit { room: pit2_room },
-            box SuperBat::new(bat1_room),
-            box SuperBat::new(bat2_room),
+        let hazzards: Vec<Rc<Hazzard>> = vec![
+            wumpus.clone(),
+            Rc::new(BottomlessPit { room: pit1_room }),
+            Rc::new(BottomlessPit { room: pit2_room }),
+            Rc::new(SuperBat::new(bat1_room)),
+            Rc::new(SuperBat::new(bat2_room)),
         ];
 
         Game {
             player,
+            wumpus,
             pit1_room,
             pit2_room,
             bat1_room,
@@ -80,15 +88,18 @@ impl Game {
 
     #[allow(dead_code)]
     pub fn new_with_player(p: Player, s: State) -> Self {
-        let hazzards: Vec<Box<Hazzard>> = vec![
-            box BottomlessPit { room: s.pit1 },
-            box BottomlessPit { room: s.pit2 },
-            box SuperBat::new(s.bat1),
-            box SuperBat::new(s.bat2),
+        let wumpus = Rc::new(Wumpus::new(s.wumpus));
+        let hazzards: Vec<Rc<Hazzard>> = vec![
+            wumpus.clone(),
+            Rc::new(BottomlessPit { room: s.pit1 }),
+            Rc::new(BottomlessPit { room: s.pit2 }),
+            Rc::new(SuperBat::new(s.bat1)),
+            Rc::new(SuperBat::new(s.bat2)),
         ];
 
         Game {
             player: box p,
+            wumpus,
             pit1_room: s.pit1,
             pit2_room: s.pit2,
             bat1_room: s.bat1,
@@ -172,13 +183,14 @@ impl Game {
     fn try_update(&mut self) -> Option<UpdateResult> {
         self.hazzards
             .iter()
-            .filter_map(|h| h.try_update(self.player.room.get()))
+            .filter_map(|h| h.try_update(&self.get_state()))
             .next()
     }
 
     fn get_state(&self) -> State {
         State {
             player: self.player.room.get(),
+            wumpus: self.wumpus.room.get(),
             pit1: self.pit1_room,
             pit2: self.pit2_room,
             bat1: self.bat1_room,
@@ -195,8 +207,9 @@ impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "player rooms: player {}, pit1: {}, pit2: {}, bat1: {}, bat2: {}.",
+            "player rooms: player {}, wumpus {}, pit1 {}, pit2 {}, bat1 {}, bat2 {}.",
             self.player.room.get(),
+            self.wumpus.room.get(),
             self.pit1_room,
             self.pit2_room,
             self.bat1_room,

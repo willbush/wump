@@ -36,8 +36,9 @@ fn can_snatch_player() {
     let room = 1;
     let bat = SuperBat { room, provider };
 
-    assert_eq!(Some(UpdateResult::SnatchTo(first)), bat.try_update(room));
-    assert_eq!(Some(UpdateResult::SnatchTo(second)), bat.try_update(room));
+    let s = &State { player: room, ..Default::default()};
+    assert_eq!(Some(UpdateResult::SnatchTo(first)), bat.try_update(s));
+    assert_eq!(Some(UpdateResult::SnatchTo(second)), bat.try_update(s));
 }
 
 pub fn create_mock_provided_bat(room: RoomNum, mut snatch_order: Vec<RoomNum>) -> SuperBat {

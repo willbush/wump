@@ -1,14 +1,14 @@
 use map::{is_adj, RoomNum};
 use message::Warning;
-use game::{Hazzard, RunResult, UpdateResult};
+use game::{Hazzard, RunResult, State, UpdateResult};
 
 pub struct BottomlessPit {
     pub room: RoomNum
 }
 
 impl Hazzard for BottomlessPit {
-    fn try_update(&self, player_room: RoomNum) -> Option<UpdateResult> {
-        if player_room == self.room {
+    fn try_update(&self, s: &State) -> Option<UpdateResult> {
+        if s.player == self.room {
             Some(UpdateResult::Death(RunResult::DeathByBottomlessPit))
         } else {
             None
@@ -32,7 +32,10 @@ mod pit_tests {
     fn can_do_nothing() {
         let pit = BottomlessPit { room: 1 };
         let player_room = 20;
-        let update_result = pit.try_update(player_room);
+        let update_result = pit.try_update(&State {
+            player: player_room,
+            ..Default::default()
+        });
         assert_eq!(None, update_result);
     }
 
@@ -47,8 +50,10 @@ mod pit_tests {
     fn can_kill_player() {
         let pit = BottomlessPit { room: 1 };
         let player_room = 1;
-        let update_result = pit.try_update(player_room);
-
+        let update_result = pit.try_update(&State {
+            player: player_room,
+            ..Default::default()
+        });
         let expected = Some(UpdateResult::Death(RunResult::DeathByBottomlessPit));
         assert_eq!(expected, update_result);
     }

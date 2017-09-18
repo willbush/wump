@@ -28,10 +28,11 @@ fn can_move_player_and_quit() {
     let player = create_mock_directed_player(player_room, actions);
     let initial_state = State {
         player: player_room,
+        wumpus: 20,
         pit1: 19,
         pit2: 18,
-        bat1: 19,
-        bat2: 20
+        bat1: 17,
+        bat2: 16
     };
     let expected_states = create_player_state_trans_from(&initial_state, &vec![2, 3, 12]);
 
@@ -49,6 +50,7 @@ fn can_move_and_fall_in_pit() {
 
     let initial_state = State {
         player: 1,
+        wumpus: 17,
         pit1: 2,
         pit2: 18,
         bat1: 19,
@@ -79,6 +81,7 @@ fn create_player_state_trans_from(initial_state: &State, room_trans: &Vec<RoomNu
     for room in room_trans.iter() {
         result.push(State {
             player: *room,
+            wumpus: initial_state.wumpus,
             pit1: initial_state.pit1,
             pit2: initial_state.pit2,
             bat1: initial_state.bat1,
