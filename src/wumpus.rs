@@ -8,28 +8,22 @@ use map::{adj_rooms_to, is_adj, RoomNum};
 use rand::{thread_rng, Rng};
 use std::cell::Cell;
 
-#[derive(PartialEq, Debug, Copy, Clone)]
-enum Action {
-    Fight,
-    Flight
-}
-
 trait Director {
     fn get_room(&self, state: &State) -> RoomNum;
-    fn get_action(&self) -> Action;
+    fn feels_like_moving(&self) -> bool;
 }
 
 pub struct Wumpus {
     pub room: Cell<RoomNum>,
     director: Box<Director>,
-    is_awake: bool
+    is_awake: Cell<bool>
 }
 
 impl Wumpus {
     pub fn new(room: RoomNum) -> Self {
         Wumpus {
             room: Cell::new(room),
-            is_awake: false,
+            is_awake: Cell::new(false),
             director: box WumpusDirector
         }
     }
@@ -45,21 +39,25 @@ impl Hazzard for Wumpus {
     }
 
     fn try_update(&self, s: &State) -> Option<UpdateResult> {
-        if self.is_awake {
-            if s.player == self.room.get() {
-                Some(UpdateResult::Death(RunResult::DeathByWumpus))
+
+        let is_bumped = if !self.is_awake.get() && s.player == self.room.get() {
+            self.is_awake.replace(true);
+            true
+        } else {
+            false
+        };
+        if self.is_awake.get() && self.director.feels_like_moving() {
+            self.room.replace(self.director.get_room(s));
+        }
+
+        if self.is_awake.get() && s.player == self.room.get() {
+            if is_bumped {
+                Some(UpdateResult::BumpAndDie)
             } else {
-                self.room.replace(self.director.get_room(s));
-                None
+                Some(UpdateResult::Death(RunResult::DeathByWumpus))
             }
-        } else if s.player == self.room.get() {
-            match self.director.get_action() {
-                Action::Flight => {
-                    self.room.replace(self.director.get_room(s));
-                    Some(UpdateResult::BumpAndLive)
-                }
-                Action::Fight => Some(UpdateResult::BumpAndDie)
-            }
+        } else if is_bumped {
+            Some(UpdateResult::BumpAndLive)
         } else {
             None
         }
@@ -79,14 +77,9 @@ impl Director for WumpusDirector {
             .unwrap()
     }
 
-    fn get_action(&self) -> Action {
+    /// Wumpus feels like moving with a 75% chance.
+    fn feels_like_moving(&self) -> bool {
         let n = thread_rng().gen_range(1, 5);
-
-        // fight with 25% chance and flight with 75% chance.
-        if n == 1 {
-            Action::Fight
-        } else {
-            Action::Flight
-        }
+        n > 1
     }
 }

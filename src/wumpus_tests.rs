@@ -10,21 +10,21 @@ impl Director for DummyDirector {
         1
     }
 
-    fn get_action(&self) -> Action {
-        Action::Fight
+    fn feels_like_moving(&self) -> bool {
+        true
     }
 }
 
 struct MockDirector {
     rooms: RefCell<Vec<RoomNum>>,
-    action: Action
+    feels_like_moving: bool
 }
 
 impl MockDirector {
-    fn new(rooms: Vec<RoomNum>, action: Action) -> Self {
+    fn new(rooms: Vec<RoomNum>, feels_like_moving: bool) -> Self {
         MockDirector {
             rooms: RefCell::new(rooms),
-            action
+            feels_like_moving
         }
     }
 }
@@ -35,8 +35,23 @@ impl Director for MockDirector {
         rooms.pop().unwrap()
     }
 
-    fn get_action(&self) -> Action {
-        self.action
+    fn feels_like_moving(&self) -> bool {
+        self.feels_like_moving
+    }
+}
+
+struct MockFeelingOnly {
+    director: Box<Director>,
+    feels_like_moving: bool
+}
+
+impl Director for MockFeelingOnly {
+    fn get_room(&self, s: &State) -> RoomNum {
+        self.director.get_room(s)
+    }
+
+    fn feels_like_moving(&self) -> bool {
+        self.feels_like_moving
     }
 }
 
@@ -46,7 +61,7 @@ impl Director for MockDirector {
 fn can_warn_property(player: RoomNum, wumpus: RoomNum, is_awake: bool) -> bool {
     let wumpus = Wumpus {
         room: Cell::new(wumpus),
-        is_awake,
+        is_awake: Cell::new(is_awake),
         director: box DummyDirector
     };
 
@@ -64,7 +79,7 @@ fn awake_wumpus_can_kill_player() {
     let player_room = 1;
     let wumpus = Wumpus {
         room: Cell::new(player_room),
-        is_awake: true,
+        is_awake: Cell::new(true),
         director: box DummyDirector
     };
     let update_result = wumpus.try_update(&State {
@@ -77,23 +92,23 @@ fn awake_wumpus_can_kill_player() {
 
 #[test]
 fn asleep_wumpus_can_get_bumped_and_kill_or_move() {
-    get_bumped_and_perform(Action::Fight, 1);
-    get_bumped_and_perform(Action::Flight, 2);
+    get_bumped_and_perform(false, 1);
+    get_bumped_and_perform(true, 2);
 }
 
-fn get_bumped_and_perform(action: Action, expected_room_after_bump: RoomNum) {
+fn get_bumped_and_perform(feels_like_moving: bool, expected_room_after_bump: RoomNum) {
     let player_room = 1;
 
     let wumpus = Wumpus {
         room: Cell::new(player_room),
-        is_awake: false,
-        director: box MockDirector::new(vec![expected_room_after_bump], action)
+        is_awake: Cell::new(false),
+        director: box MockDirector::new(vec![expected_room_after_bump], feels_like_moving)
     };
 
-    let expected = if action == Action::Fight {
-        Some(UpdateResult::BumpAndDie)
-    } else {
+    let expected = if feels_like_moving {
         Some(UpdateResult::BumpAndLive)
+    } else {
+        Some(UpdateResult::BumpAndDie)
     };
 
     let update_result = wumpus.try_update(&State {
@@ -101,6 +116,7 @@ fn get_bumped_and_perform(action: Action, expected_room_after_bump: RoomNum) {
         ..Default::default()
     });
     assert_eq!(expected, update_result);
+    assert!(wumpus.is_awake.get());
     assert_eq!(expected_room_after_bump, wumpus.room.get());
 }
 
@@ -119,8 +135,11 @@ fn awake_wumpus_can_avoid_pits_when_moving() {
 
     let wumpus = Wumpus {
         room: Cell::new(wumpus_room),
-        is_awake: true,
-        director: box WumpusDirector
+        is_awake: Cell::new(true),
+        director: box MockFeelingOnly {
+            director: box WumpusDirector,
+            feels_like_moving: true
+        }
     };
     let update_result = wumpus.try_update(&State {
         wumpus: wumpus_room,
