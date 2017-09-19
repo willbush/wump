@@ -116,11 +116,12 @@ impl Game {
             if self.is_cheating {
                 println!("{}", self);
             }
-            self.print_any_hazzard_warnings();
-
             if let Some(run_result) = self.update() {
                 return (states, run_result);
             }
+
+            self.print_any_hazzard_warnings();
+
             let state = self.get_state();
             states.push(state.to_owned());
             let action = self.player.get_action(&state);
