@@ -11,6 +11,7 @@ use std::cell::Cell;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
+    Shoot(RoomNum),
     Move(RoomNum),
     Quit
 }

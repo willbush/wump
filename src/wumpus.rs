@@ -47,7 +47,8 @@ impl Hazzard for Wumpus {
             false
         };
         if self.is_awake.get() && self.director.feels_like_moving() {
-            self.room.replace(self.director.get_room(s));
+            let next_room = self.director.get_room(s);
+            self.room.replace(next_room);
         }
 
         if self.is_awake.get() && s.player == self.room.get() {
@@ -80,6 +81,6 @@ impl Director for WumpusDirector {
     /// Wumpus feels like moving with a 75% chance.
     fn feels_like_moving(&self) -> bool {
         let n = thread_rng().gen_range(1, 5);
-        n > 1
+         n > 1
     }
 }

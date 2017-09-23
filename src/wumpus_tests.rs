@@ -92,11 +92,11 @@ fn awake_wumpus_can_kill_player() {
 
 #[test]
 fn asleep_wumpus_can_get_bumped_and_kill_or_move() {
-    get_bumped_and_perform(false, 1);
-    get_bumped_and_perform(true, 2);
+    get_bumped_and(false, 1);
+    get_bumped_and(true, 2);
 }
 
-fn get_bumped_and_perform(feels_like_moving: bool, expected_room_after_bump: RoomNum) {
+fn get_bumped_and(feels_like_moving: bool, expected_room_after_bump: RoomNum) {
     let player_room = 1;
 
     let wumpus = Wumpus {

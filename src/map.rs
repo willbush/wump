@@ -3,6 +3,8 @@ use rand::{thread_rng, Rng};
 // room number as usize so it can index into the map.
 pub type RoomNum = usize;
 
+pub const NUM_OF_ROOMS: RoomNum = 20;
+
 // The game map in Hunt the Wumpus is laid out as a dodecahedron. The vertices
 // of the dodecahedron are considered rooms, and each room has 3 adjacent rooms.
 // A room is adjacent if it has a line segment directly from one vertex to
@@ -53,6 +55,12 @@ pub fn rand_room() -> RoomNum {
 pub fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
     let adj_rooms = MAP[room - 1];
     (adj_rooms[0], adj_rooms[1], adj_rooms[2])
+}
+
+pub fn rand_adj_rooms_to(room: RoomNum) -> RoomNum {
+    let adj_rooms = MAP[room - 1];
+    let i = thread_rng().gen_range(0, adj_rooms.len());
+    adj_rooms[i]
 }
 
 #[cfg(test)]

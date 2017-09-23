@@ -13,6 +13,8 @@ use map::{is_adj, RoomNum};
 use message::Message;
 use util::*;
 
+pub const MAX_TRAVERSABLE: usize = 5;
+
 pub trait Hazzard {
     fn try_update(&self, state: &State) -> Option<UpdateResult>;
     fn try_warn(&self, player_room: RoomNum) -> Option<&str>;
@@ -182,9 +184,10 @@ impl Game {
     }
 
     fn try_update(&mut self) -> Option<UpdateResult> {
+        let state = self.get_state();
         self.hazzards
             .iter()
-            .filter_map(|h| h.try_update(&self.get_state()))
+            .filter_map(|h| h.try_update(&state))
             .next()
     }
 
@@ -208,7 +211,7 @@ impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "player rooms: player {}, wumpus {}, pit1 {}, pit2 {}, bat1 {}, bat2 {}.",
+            "r rooms: player {}, wumpus {}, pit1 {}, pit2 {}, bat1 {}, bat2 {}.",
             self.player.room.get(),
             self.wumpus.room.get(),
             self.pit1_room,
@@ -229,5 +232,50 @@ impl fmt::Display for RunResult {
             RunResult::UserQuit => String::from("")
         };
         write!(f, "{}", msg)
+    }
+}
+
+type NumToRandTraverse = usize;
+type RoomToStartFrom = RoomNum;
+
+#[derive(PartialEq, Debug)]
+enum ShootResult {
+    Miss,
+    Hit,
+    Remaining(NumToRandTraverse, RoomToStartFrom)
+}
+
+/// A path is too crooked if it contains an A-B-A path where A is adjacent to B.
+fn is_too_crooked(path: &[RoomNum]) -> bool {
+    path.chunks(3)
+        .any(|x| x.len() == 3 && is_adj(x[0], x[1]) && x[0] == x[2])
+}
+
+fn traverse(rooms: &[RoomNum], player: RoomNum, wumpus: RoomNum) -> ShootResult {
+    if rooms.len() == 0 {
+        return ShootResult::Miss;
+    }
+    let max = MAX_TRAVERSABLE;
+    let num_to_traverse = if rooms.len() < max { rooms.len() } else { max };
+    let mut traversed = 0;
+
+    let mut previous_room = rooms[0];
+
+    if !is_adj(previous_room, player) {
+        return ShootResult::Remaining(1, player);
+    }
+
+    for room in rooms.iter().take(num_to_traverse) {
+        if *room == wumpus {
+            return ShootResult::Hit;
+        }
+        traversed += 1;
+    }
+
+    let remaining = num_to_traverse - traversed;
+    if remaining == 0 {
+        ShootResult::Miss
+    } else {
+        ShootResult::Remaining(remaining, player)
     }
 }
