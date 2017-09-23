@@ -1,18 +1,18 @@
 use rand::{thread_rng, Rng};
 
-// room number as usize so it can index into the map.
+/// room number as usize so it can index into the map.
 pub type RoomNum = usize;
 
 pub const NUM_OF_ROOMS: RoomNum = 20;
 
-// The game map in Hunt the Wumpus is laid out as a dodecahedron. The vertices
-// of the dodecahedron are considered rooms, and each room has 3 adjacent rooms.
-// A room is adjacent if it has a line segment directly from one vertex to
-// another. Here we have a 2D array where the first dimension represents the 20
-// rooms (index + 1 == room number). the second dimension is an array of the
-// adjacent rooms. I just hard coded some valid room values here for ease, but
-// there is a formula that could be used to derive instead.
-pub static MAP: [[RoomNum; 3]; 20] = [
+/// The game map in Hunt the Wumpus is laid out as a dodecahedron. The vertices
+/// of the dodecahedron are considered rooms, and each room has 3 adjacent rooms.
+/// A room is adjacent if it has a line segment directly from one vertex to
+/// another. Here we have a 2D array where the first dimension represents the 20
+/// rooms (index + 1 == room number). the second dimension is an array of the
+/// adjacent rooms. I just hard coded some valid room values here for ease, but
+/// there is a formula that could be used to derive instead.
+pub static MAP: [[RoomNum; 3]; NUM_OF_ROOMS] = [
     [2, 5, 8],
     [1, 3, 10],
     [2, 4, 12],
@@ -35,6 +35,7 @@ pub static MAP: [[RoomNum; 3]; 20] = [
     [13, 16, 19],
 ];
 
+/// returns true if the two given rooms are adjacent.
 pub fn is_adj(next: RoomNum, current: RoomNum) -> bool {
     if current > 0 && current <= MAP.len() {
         let adj_rooms = MAP[current - 1];
@@ -48,16 +49,19 @@ pub fn is_adj(next: RoomNum, current: RoomNum) -> bool {
     }
 }
 
+/// Get a random room on the map.
 pub fn rand_room() -> RoomNum {
     thread_rng().gen_range(1, MAP.len() + 1)
 }
 
+/// Get a tuple of adjacent rooms.
 pub fn adj_rooms_to(room: RoomNum) -> (RoomNum, RoomNum, RoomNum) {
     let adj_rooms = MAP[room - 1];
     (adj_rooms[0], adj_rooms[1], adj_rooms[2])
 }
 
-pub fn rand_adj_rooms_to(room: RoomNum) -> RoomNum {
+/// Get a random room adjacent to the given room.
+pub fn rand_adj_room_to(room: RoomNum) -> RoomNum {
     let adj_rooms = MAP[room - 1];
     let i = thread_rng().gen_range(0, adj_rooms.len());
     adj_rooms[i]
@@ -67,9 +71,9 @@ pub fn rand_adj_rooms_to(room: RoomNum) -> RoomNum {
 mod map_tests {
     use super::*;
 
-    // One property that exists for the map is if current room is in bounds of
-    // the map and strictly less than the map length, then we should always be
-    // able to move to the room (current + 1).
+    /// One property that exists for the map is if current room is in bounds of
+    /// the map and strictly less than the map length, then we should always be
+    /// able to move to the room (current + 1).
     #[quickcheck]
     fn can_move_to_next_room_num_property(current: RoomNum) -> bool {
         let is_adj = is_adj(current, current + 1);

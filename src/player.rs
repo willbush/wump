@@ -5,7 +5,7 @@ pub mod player_tests;
 use message::Prompt;
 use map::RoomNum;
 use game::State;
-use map::adj_rooms_to;
+use map::{adj_rooms_to, is_adj};
 use util::{get_adj_room_to, print, read_sanitized_line};
 use std::cell::Cell;
 
@@ -56,4 +56,10 @@ impl Director for PlayerDirector {
             }
         }
     }
+}
+
+/// A path is too crooked if it contains an A-B-A path where A is adjacent to B.
+fn is_too_crooked(path: &[RoomNum]) -> bool {
+    path.windows(3)
+        .any(|x| x.len() == 3 && is_adj(x[0], x[1]) && x[0] == x[2])
 }

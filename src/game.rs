@@ -245,12 +245,6 @@ enum ShootResult {
     Remaining(NumToRandTraverse, RoomToStartFrom)
 }
 
-/// A path is too crooked if it contains an A-B-A path where A is adjacent to B.
-fn is_too_crooked(path: &[RoomNum]) -> bool {
-    path.chunks(3)
-        .any(|x| x.len() == 3 && is_adj(x[0], x[1]) && x[0] == x[2])
-}
-
 fn traverse(rooms: &[RoomNum], player: RoomNum, wumpus: RoomNum) -> ShootResult {
     if rooms.len() == 0 {
         return ShootResult::Miss;

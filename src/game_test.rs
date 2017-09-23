@@ -1,4 +1,4 @@
-use map::{rand_adj_rooms_to, rand_room, NUM_OF_ROOMS};
+use map;
 use player::player_tests::create_mock_directed_player;
 use bat::bat_tests::create_mock_provided_bat;
 use bat::SuperBat;
@@ -49,33 +49,11 @@ fn player_can_get_multi_snatched_into_pit() {
     assert_eq!(RunResult::DeathByBottomlessPit, result);
 }
 
-#[test]
-fn can_detect_crooked_arrow_paths() {
-    let a = rand_room();
-    let b = rand_adj_rooms_to(a);
-    let path = [a, b, a];
-    assert!(is_too_crooked(&path));
-}
-
-#[test]
-fn non_adj_A_B_A_path_is_not_crooked() {
-    let a = rand_room();
-
-    let b = loop {
-        let b = rand_room();
-        if !is_adj(a, b) {
-            break b;
-        }
-    };
-    let path = [a, b, a];
-    assert!(!is_too_crooked(&path));
-}
-
 /// loop up to the max where we can shoot through up to 5 rooms in line and
 /// still miss the Wumpus by one.
 #[test]
 fn can_miss_by_one() {
-    let max = NUM_OF_ROOMS - MAX_TRAVERSABLE + 1;
+    let max = map::NUM_OF_ROOMS - MAX_TRAVERSABLE + 1;
 
     for room_num in 2..max {
         let num_to_traverse = thread_rng().gen_range(1, MAX_TRAVERSABLE + 1);
@@ -93,7 +71,7 @@ fn can_miss_by_one() {
 /// the Wumpus.
 #[test]
 fn can_hit() {
-    let max = NUM_OF_ROOMS - MAX_TRAVERSABLE + 1;
+    let max = map::NUM_OF_ROOMS - MAX_TRAVERSABLE + 1;
 
     for room_num in 2..max {
         let num_to_traverse = thread_rng().gen_range(1, MAX_TRAVERSABLE + 1);

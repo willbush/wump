@@ -39,18 +39,15 @@ impl Hazzard for Wumpus {
     }
 
     fn try_update(&self, s: &State) -> Option<UpdateResult> {
+        let is_bumped = !self.is_awake.get() && s.player == self.room.get();
 
-        let is_bumped = if !self.is_awake.get() && s.player == self.room.get() {
+        if is_bumped {
             self.is_awake.replace(true);
-            true
-        } else {
-            false
-        };
+        }
         if self.is_awake.get() && self.director.feels_like_moving() {
             let next_room = self.director.get_room(s);
             self.room.replace(next_room);
         }
-
         if self.is_awake.get() && s.player == self.room.get() {
             if is_bumped {
                 Some(UpdateResult::BumpAndDie)
@@ -81,6 +78,6 @@ impl Director for WumpusDirector {
     /// Wumpus feels like moving with a 75% chance.
     fn feels_like_moving(&self) -> bool {
         let n = thread_rng().gen_range(1, 5);
-         n > 1
+        n > 1
     }
 }
