@@ -1,6 +1,7 @@
-use game::{Game, RunResult};
+use game::{Game, RunResult, MAX_TRAVERSABLE};
 use map::{rand_adj_room_to, rand_room};
 use std::cell::RefCell;
+use rand::{thread_rng, Rng};
 use super::*;
 
 struct MockDirector {
@@ -111,39 +112,61 @@ fn create_player_state_trans_from(initial_state: &State, room_trans: &Vec<RoomNu
 #[test]
 fn can_detect_crooked_arrow_paths() {
     // case1: A-B-A
-    let a = rand_room();
-    let b = rand_adj_room_to(a);
-    let path = [a, b, a];
-    assert!(is_too_crooked(&path));
+    let case1 = || {
+        let a = rand_room();
+        let b = rand_adj_room_to(a);
+        let path = [a, b, a];
+        assert!(is_too_crooked(&path), "{:?}", &path);
+    };
 
     // case2: v-A-B-A
-    let v = rand_room();
-    let a = rand_adj_room_to(v);
-    let b = rand_valid_adj_room_to(a, v);
-    let path = [v, a, b, a];
-    assert!(is_too_crooked(&path));
+    let case2 = || {
+        let v = rand_room();
+        let a = rand_adj_room_to(v);
+        let b = rand_valid_adj_room_to(a, v);
+        let path = [v, a, b, a];
+        assert!(is_too_crooked(&path), "{:?}", &path);
+    };
 
     // case3: v-v-A-B-A
-    let v1 = rand_room();
-    let v2 = rand_adj_room_to(v1);
-    let a = rand_valid_adj_room_to(v2, v1);
-    let b = rand_valid_adj_room_to(a, v2);
-    let path = [v1, v2, a, b, a];
-    assert!(is_too_crooked(&path));
+    let case3 = || {
+        let v1 = rand_room();
+        let v2 = rand_adj_room_to(v1);
+        let a = rand_valid_adj_room_to(v2, v1);
+        let b = rand_valid_adj_room_to(a, v2);
+        let path = [v1, v2, a, b, a];
+        assert!(is_too_crooked(&path), "{:?}", &path);
+    };
+    perform_trial(10, &case1);
+    perform_trial(10, &case2);
+    perform_trial(10, &case3);
 }
 
 #[test]
-fn non_adj_a_b_a_path_is_not_crooked() {
-    let a = rand_room();
+fn valid_paths_are_not_too_crooked() {
+    perform_trial(10, &|| {
+        // any valid num of valid paths from [1, 5]
+        let num_to_traverse = thread_rng().gen_range(1, MAX_TRAVERSABLE + 1);
+        let mut valid_path = Vec::with_capacity(num_to_traverse);
 
-    let b = loop {
-        let b = rand_room();
-        if !is_adj(a, b) {
-            break b;
+        for i in 0..num_to_traverse {
+            if i == 0 {
+                valid_path.push(rand_room());
+            } else if i == 1 {
+                let prev = valid_path[i - 1];
+                valid_path.push(rand_adj_room_to(prev));
+            } else {
+                let prev = valid_path[i - 1];
+                let before_prev = valid_path[i - 2];
+                valid_path.push(rand_valid_adj_room_to(prev, before_prev));
+            }
         }
-    };
-    let path = [a, b, a];
-    assert!(!is_too_crooked(&path));
+        assert!(!is_too_crooked(&valid_path), "{:?}", &valid_path);
+    });
+}
+
+fn perform_trial(trial_count: u32, trial: &Fn()) {
+    (0..trial_count).for_each(|_| trial());
 }
 
 /// Gets a random room adjacent to the given room, but not equal to the previous
