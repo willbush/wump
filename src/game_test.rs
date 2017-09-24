@@ -105,7 +105,7 @@ fn invalid_first_room_causes_random_traversal(room_to_shoot: RoomNum) -> TestRes
         // cannot shoot from a room not adjacent to the player.
         let shoot_result = traverse(&rooms, wumpus);
 
-        TestResult::from_bool(ShootResult::Remaining(1, player) == shoot_result)
+        TestResult::from_bool(ShootResult::Remaining(2, player) == shoot_result)
     } else {
         TestResult::discard()
     }
@@ -119,6 +119,8 @@ fn disjoint_room_causes_random_traversal() {
         let room_count = thread_rng().gen_range(1, max);
         let mut paths = map::gen_rand_valid_path_of_len(room_count);
 
+        assert_eq!(room_count, paths.len(), "must gen paths of the given len.");
+
         let last = paths[paths.len() - 1];
         let disjoint_room = get_rand_room_disjoint_from(last);
         paths.push(disjoint_room);
@@ -131,7 +133,7 @@ fn disjoint_room_causes_random_traversal() {
         println!("{:?}", paths);
 
         assert_eq!(
-            ShootResult::Remaining(1, last_valid),
+            ShootResult::Remaining(2, last_valid),
             shoot_result,
             "paths: {:?}",
             &paths
