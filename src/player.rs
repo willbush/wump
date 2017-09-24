@@ -2,16 +2,16 @@
 #[path = "./player_tests.rs"]
 pub mod player_tests;
 
-use message::Prompt;
-use map::RoomNum;
-use game::State;
+use message;
+use map::{RoomNum, NUM_OF_ROOMS};
+use game::{State, MAX_TRAVERSABLE};
 use map::{adj_rooms_to, is_adj};
-use util::{get_adj_room_to, print, read_sanitized_line};
+use util::{print, read_line, read_sanitized_line};
 use std::cell::Cell;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
-    Shoot(RoomNum),
+    Shoot(Vec<RoomNum>),
     Move(RoomNum),
     Quit
 }
@@ -47,15 +47,67 @@ impl Director for PlayerDirector {
             println!("You are in room {}", room_num);
             let (a, b, c) = adj_rooms_to(room_num);
             println!("Tunnel leads to {} {} {}", a, b, c);
-            print(Prompt::ACTION);
+            print(message::Prompt::ACTION);
 
             match read_sanitized_line().as_ref() {
                 "M" => return Action::Move(get_adj_room_to(room_num)),
                 "Q" => return Action::Quit,
+                "S" => return Action::Shoot(get_rooms_to_shoot(room_num)),
                 _ => continue
             }
         }
     }
+}
+
+pub fn get_adj_room_to(room: RoomNum) -> RoomNum {
+    print("Where to? ");
+
+    loop {
+        let input = read_sanitized_line();
+
+        match input.parse::<RoomNum>() {
+            Ok(next) if is_adj(room, next) => return next,
+            _ => print("Not Possible - Where to? ")
+        }
+    }
+}
+
+fn get_rooms_to_shoot(player: RoomNum) -> Vec<RoomNum> {
+    loop {
+        print("Enter up to 5 space separated rooms to shoot: ");
+
+        if let Some(rooms) = try_parse_rooms_from_user(player) {
+            if is_too_crooked(&rooms) {
+                println!("{}", message::Message::TOO_CROOKED);
+            } else {
+                return rooms;
+            }
+        }
+    }
+}
+
+fn try_parse_rooms_from_user(player: RoomNum) -> Option<Vec<RoomNum>> {
+    let mut result = vec![player];
+    let line = read_line();
+    let rooms = line.split_whitespace()
+        .take(MAX_TRAVERSABLE)
+        .map(|r| r.parse::<RoomNum>());
+
+    for r in rooms {
+        match r {
+            Ok(room_num) => if room_num > 0 && room_num <= NUM_OF_ROOMS {
+                result.push(room_num);
+            } else {
+                println!("The room number {} is out of bounds.", room_num);
+                return None;
+            },
+            Err(_) => {
+                println!("The given list of rooms contains one or more invalid numbers.");
+                return None;
+            }
+        }
+    }
+    Some(result)
 }
 
 /// A path is too crooked if it contains an A-B-A path where A is adjacent to B.

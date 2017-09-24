@@ -1,5 +1,5 @@
 use game::{Game, RunResult, MAX_TRAVERSABLE};
-use map::{rand_adj_room_to, rand_room};
+use map::{gen_rand_valid_path_of_len, rand_adj_room_to, rand_room, rand_valid_adj_room_to};
 use std::cell::RefCell;
 use rand::{thread_rng, Rng};
 use super::*;
@@ -147,35 +147,11 @@ fn valid_paths_are_not_too_crooked() {
     perform_trial(10, &|| {
         // any valid num of valid paths from [1, 5]
         let num_to_traverse = thread_rng().gen_range(1, MAX_TRAVERSABLE + 1);
-        let mut valid_path = Vec::with_capacity(num_to_traverse);
-
-        for i in 0..num_to_traverse {
-            if i == 0 {
-                valid_path.push(rand_room());
-            } else if i == 1 {
-                let prev = valid_path[i - 1];
-                valid_path.push(rand_adj_room_to(prev));
-            } else {
-                let prev = valid_path[i - 1];
-                let before_prev = valid_path[i - 2];
-                valid_path.push(rand_valid_adj_room_to(prev, before_prev));
-            }
-        }
+        let valid_path = gen_rand_valid_path_of_len(num_to_traverse);
         assert!(!is_too_crooked(&valid_path), "{:?}", &valid_path);
     });
 }
 
 fn perform_trial(trial_count: u32, trial: &Fn()) {
     (0..trial_count).for_each(|_| trial());
-}
-
-/// Gets a random room adjacent to the given room, but not equal to the previous
-/// room. Useful for avoiding "too crooked" paths.
-fn rand_valid_adj_room_to(room: RoomNum, previous_room: RoomNum) -> RoomNum {
-    loop {
-        let r = rand_adj_room_to(room);
-        if r != previous_room {
-            return r;
-        }
-    }
 }

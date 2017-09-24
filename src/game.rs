@@ -9,7 +9,7 @@ use player::{Action, Player};
 use wumpus::Wumpus;
 use pit::BottomlessPit;
 use bat::SuperBat;
-use map::{is_adj, RoomNum};
+use map::{gen_rand_valid_path_from, is_adj, RoomNum};
 use message::Message;
 use util::*;
 
@@ -35,6 +35,7 @@ pub enum UpdateResult {
 #[derive(Debug, PartialEq)]
 pub enum RunResult {
     UserQuit,
+    UserWin,
     DeathByBottomlessPit,
     DeathByWumpus
 }
@@ -148,6 +149,7 @@ impl Game {
                 None
             }
             Action::Quit => Some(RunResult::UserQuit),
+            Action::Shoot(ref rooms) => shoot(rooms, self.wumpus.room.get()),
             _ => panic!("illegal action: {:?}", action)
         }
     }
@@ -229,47 +231,59 @@ impl fmt::Display for RunResult {
                 format!("{}\n{}\n", Message::FELL_IN_PIT, Message::LOSE)
             }
             RunResult::DeathByWumpus => format!("{}\n{}\n", Message::WUMPUS_GOT_YOU, Message::LOSE),
+            RunResult::UserWin => format!("{}\n", Message::WIN),
             RunResult::UserQuit => String::from("")
         };
         write!(f, "{}", msg)
     }
 }
 
-type NumToRandTraverse = usize;
-type RoomToStartFrom = RoomNum;
+type NumRemaining = usize;
+type LastTraversed = usize;
 
 #[derive(PartialEq, Debug)]
 enum ShootResult {
     Miss,
     Hit,
-    Remaining(NumToRandTraverse, RoomToStartFrom)
+    Remaining(NumRemaining, LastTraversed)
 }
 
-fn traverse(rooms: &[RoomNum], player: RoomNum, wumpus: RoomNum) -> ShootResult {
-    if rooms.len() == 0 {
-        return ShootResult::Miss;
+fn shoot(rooms: &[RoomNum], wumpus: RoomNum) -> Option<RunResult> {
+    match traverse(rooms, wumpus) {
+        ShootResult::Hit => Some(RunResult::UserWin),
+        ShootResult::Miss => {
+            println!("{}", String::from(Message::MISSED));
+            None
+        }
+        ShootResult::Remaining(remaining, last_traversed) => {
+            let remaining_rooms = gen_rand_valid_path_from(remaining, last_traversed);
+            shoot(&remaining_rooms, wumpus)
+        }
     }
-    let max = MAX_TRAVERSABLE;
-    let num_to_traverse = if rooms.len() < max { rooms.len() } else { max };
-    let mut traversed = 0;
+}
 
-    let mut previous_room = rooms[0];
-
-    if !is_adj(previous_room, player) {
-        return ShootResult::Remaining(1, player);
+/// Traverse crooked arrow across rooms starting from the player's room. The
+/// rooms array starts with the player's room, but this room doesn't count a
+/// room that can be traversed. When the room length is out of bounds it
+/// represents a bug in the program, so instead of possibly hiding the bug by
+/// returning Miss I have it panic.
+fn traverse(rooms: &[RoomNum], wumpus: RoomNum) -> ShootResult {
+    if rooms.len() < 2 || rooms.len() > MAX_TRAVERSABLE + 1 {
+        panic!("traversed called with rooms of len: {}", rooms.len());
     }
 
-    for room in rooms.iter().take(num_to_traverse) {
-        if *room == wumpus {
+    for (num_traversed, w) in rooms.windows(2).enumerate() {
+        let a = w[0];
+        let b = w[1];
+
+        if !is_adj(a, b) {
+            let num_to_traverse = rooms.len() - 1; // minus the player
+            return ShootResult::Remaining(num_to_traverse - num_traversed, a);
+        }
+        println!("{}", b);
+        if b == wumpus {
             return ShootResult::Hit;
         }
-        traversed += 1;
     }
-
-    let remaining = num_to_traverse - traversed;
-    if remaining == 0 {
-        ShootResult::Miss
-    } else {
-        ShootResult::Remaining(remaining, player)
-    }
+    ShootResult::Miss
 }

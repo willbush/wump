@@ -57,7 +57,7 @@ impl Message {
     pub const OUT_OF_ARROWS: &'static str = "You've run out of arrows!";
     pub const ARROW_GOT_YOU: &'static str = "Ouch! Arrow got you!";
     pub const MISSED: &'static str = "Missed!";
-    pub const TOO_CROOKED: &'static str = "Arrows aren't that crooked - try another room!";
+    pub const TOO_CROOKED: &'static str = "Arrows aren't that crooked - try another room sequence!";
 
     pub const FELL_IN_PIT: &'static str = "YYYIIIIEEEE... fell in a pit!";
     pub const WUMPUS_GOT_YOU: &'static str = "Tsk tsk tsk - wumpus got you!";

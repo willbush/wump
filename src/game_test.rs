@@ -53,17 +53,26 @@ fn player_can_get_multi_snatched_into_pit() {
 /// still miss the Wumpus by one.
 #[test]
 fn can_miss_by_one() {
-    let max = map::NUM_OF_ROOMS - MAX_TRAVERSABLE + 1;
+    let max = map::NUM_OF_ROOMS - MAX_TRAVERSABLE;
 
-    for room_num in 2..max {
-        let num_to_traverse = thread_rng().gen_range(1, MAX_TRAVERSABLE + 1);
-        let rooms_to_traverse: Vec<_> = (room_num..(room_num + num_to_traverse)).collect();
-        let player_room = room_num - 1;
-        let wumpus_room = player_room + num_to_traverse + 1;
+    for room_num in 1..max {
+        perform_trial(4, &|| {
+            // room count includes the player's room plus the number of rooms for the
+            // crooked arrow to traverse. [2, 6]
+            let room_count = thread_rng().gen_range(2, MAX_TRAVERSABLE + 2);
+            let rooms: Vec<_> = (room_num..(room_num + room_count)).collect();
+            let wumpus_room = room_num + room_count;
 
-        let shoot_result = traverse(&rooms_to_traverse, player_room, wumpus_room);
+            let shoot_result = traverse(&rooms, wumpus_room);
 
-        assert_eq!(ShootResult::Miss, shoot_result);
+            assert_eq!(
+                ShootResult::Miss,
+                shoot_result,
+                "rooms: {:?} wumpus: {}",
+                rooms,
+                wumpus_room
+            );
+        });
     }
 }
 
@@ -71,17 +80,18 @@ fn can_miss_by_one() {
 /// the Wumpus.
 #[test]
 fn can_hit() {
-    let max = map::NUM_OF_ROOMS - MAX_TRAVERSABLE + 1;
+    let max = map::NUM_OF_ROOMS - MAX_TRAVERSABLE;
 
-    for room_num in 2..max {
-        let num_to_traverse = thread_rng().gen_range(1, MAX_TRAVERSABLE + 1);
-        let rooms_to_traverse: Vec<_> = (room_num..(room_num + num_to_traverse)).collect();
-        let player_room = room_num - 1;
-        let wumpus_room = player_room + num_to_traverse;
+    for room_num in 1..max {
+        perform_trial(4, &|| {
+            let room_count = thread_rng().gen_range(2, MAX_TRAVERSABLE + 2);
+            let rooms: Vec<_> = (room_num..(room_num + room_count)).collect();
+            let wumpus_room = rooms[rooms.len() - 1];
 
-        let shoot_result = traverse(&rooms_to_traverse, player_room, wumpus_room);
+            let shoot_result = traverse(&rooms, wumpus_room);
 
-        assert_eq!(ShootResult::Hit, shoot_result);
+            assert_eq!(ShootResult::Hit, shoot_result);
+        });
     }
 }
 
@@ -91,13 +101,53 @@ fn invalid_first_room_causes_random_traversal(room_to_shoot: RoomNum) -> TestRes
 
     if !is_adj(player, room_to_shoot) {
         let wumpus = 20;
+        let rooms = [player, room_to_shoot];
         // cannot shoot from a room not adjacent to the player.
-        let shoot_result = traverse(&[room_to_shoot], player, wumpus);
-        let expected_remaining = 1;
-        TestResult::from_bool(
-            ShootResult::Remaining(expected_remaining, player) == shoot_result
-        )
+        let shoot_result = traverse(&rooms, wumpus);
+
+        TestResult::from_bool(ShootResult::Remaining(1, player) == shoot_result)
     } else {
         TestResult::discard()
     }
+}
+
+#[test]
+fn disjoint_room_causes_random_traversal() {
+    perform_trial(10, &|| {
+        // get rand number from [1, 5] and leave room for the last room to be disjoint.
+        let max = MAX_TRAVERSABLE + 1; // player room + 5 traversable rooms we can shoot.
+        let room_count = thread_rng().gen_range(1, max);
+        let mut paths = map::gen_rand_valid_path_of_len(room_count);
+
+        let last = paths[paths.len() - 1];
+        let disjoint_room = get_rand_room_disjoint_from(last);
+        paths.push(disjoint_room);
+
+        let wumpus = 21; // off the map so we don't hit the Wumpus.
+        let shoot_result = traverse(&paths, wumpus);
+
+        let last_valid = paths[paths.len() - 2];
+
+        println!("{:?}", paths);
+
+        assert_eq!(
+            ShootResult::Remaining(1, last_valid),
+            shoot_result,
+            "paths: {:?}",
+            &paths
+        );
+    });
+}
+
+fn get_rand_room_disjoint_from(room: RoomNum) -> RoomNum {
+    loop {
+        let r = map::rand_room();
+        if !map::is_adj(r, room) {
+            return r;
+        }
+    }
+}
+
+fn perform_trial(trial_count: u32, trial: &Fn()) {
+    (0..trial_count).for_each(|_| trial());
 }

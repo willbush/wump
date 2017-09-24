@@ -67,6 +67,40 @@ pub fn rand_adj_room_to(room: RoomNum) -> RoomNum {
     adj_rooms[i]
 }
 
+/// Generate a valid arrow path of given length.
+pub fn gen_rand_valid_path_of_len(n: usize) -> Vec<RoomNum> {
+    gen_rand_valid_path_from(n, rand_room())
+}
+
+pub fn gen_rand_valid_path_from(len: usize, starting: RoomNum) -> Vec<RoomNum> {
+    let mut valid_path = Vec::with_capacity(len);
+
+    for i in 0..len {
+        if i == 0 {
+            valid_path.push(starting);
+        } else if i == 1 {
+            let prev = valid_path[i - 1];
+            valid_path.push(rand_adj_room_to(prev));
+        } else {
+            let prev = valid_path[i - 1];
+            let before_prev = valid_path[i - 2];
+            valid_path.push(rand_valid_adj_room_to(prev, before_prev));
+        }
+    }
+    valid_path
+}
+
+/// Gets a random room adjacent to the given room, but not equal to the previous
+/// room. Useful for avoiding "too crooked" paths.
+pub fn rand_valid_adj_room_to(room: RoomNum, previous_room: RoomNum) -> RoomNum {
+    loop {
+        let r = rand_adj_room_to(room);
+        if r != previous_room {
+            return r;
+        }
+    }
+}
+
 #[cfg(test)]
 mod map_tests {
     use super::*;
