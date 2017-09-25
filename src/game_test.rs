@@ -63,7 +63,7 @@ fn can_miss_by_one() {
             let rooms: Vec<_> = (room_num..(room_num + room_count)).collect();
             let wumpus_room = room_num + room_count;
 
-            let shoot_result = traverse(&rooms, wumpus_room);
+            let shoot_result = traverse(&rooms, rooms[0], wumpus_room);
 
             assert_eq!(
                 ShootResult::Miss,
@@ -88,7 +88,7 @@ fn can_hit() {
             let rooms: Vec<_> = (room_num..(room_num + room_count)).collect();
             let wumpus_room = rooms[rooms.len() - 1];
 
-            let shoot_result = traverse(&rooms, wumpus_room);
+            let shoot_result = traverse(&rooms, rooms[0], wumpus_room);
 
             assert_eq!(ShootResult::Hit, shoot_result);
         });
@@ -103,7 +103,7 @@ fn invalid_first_room_causes_random_traversal(room_to_shoot: RoomNum) -> TestRes
         let wumpus = 20;
         let rooms = [player, room_to_shoot];
         // cannot shoot from a room not adjacent to the player.
-        let shoot_result = traverse(&rooms, wumpus);
+        let shoot_result = traverse(&rooms, player, wumpus);
 
         TestResult::from_bool(ShootResult::Remaining(2, player) == shoot_result)
     } else {
@@ -126,7 +126,7 @@ fn disjoint_room_causes_random_traversal() {
         paths.push(disjoint_room);
 
         let wumpus = 21; // off the map so we don't hit the Wumpus.
-        let shoot_result = traverse(&paths, wumpus);
+        let shoot_result = traverse(&paths, paths[0], wumpus);
 
         let last_valid = paths[paths.len() - 2];
 
@@ -139,6 +139,15 @@ fn disjoint_room_causes_random_traversal() {
             &paths
         );
     });
+}
+
+#[test]
+fn player_can_suicide() {
+    let rooms = [1, 2, 3, 4, 5, 1];
+    let player = 1;
+    let wumpus = 20;
+    let shoot_result = traverse(&rooms, player, wumpus);
+    assert_eq!(ShootResult::Suicide, shoot_result);
 }
 
 fn get_rand_room_disjoint_from(room: RoomNum) -> RoomNum {

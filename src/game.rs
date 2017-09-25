@@ -36,6 +36,7 @@ pub enum UpdateResult {
 pub enum RunResult {
     UserQuit,
     UserWin,
+    UserSuicide,
     DeathByBottomlessPit,
     DeathByWumpus
 }
@@ -149,7 +150,9 @@ impl Game {
                 None
             }
             Action::Quit => Some(RunResult::UserQuit),
-            Action::Shoot(ref rooms) => shoot(rooms, self.wumpus.room.get()),
+            Action::Shoot(ref rooms) => {
+                shoot(rooms, self.player.room.get(), self.wumpus.room.get())
+            }
             _ => panic!("illegal action: {:?}", action)
         }
     }
@@ -231,6 +234,7 @@ impl fmt::Display for RunResult {
                 format!("{}\n{}\n", Message::FELL_IN_PIT, Message::LOSE)
             }
             RunResult::DeathByWumpus => format!("{}\n{}\n", Message::WUMPUS_GOT_YOU, Message::LOSE),
+            RunResult::UserSuicide => format!("{}\n{}\n", Message::ARROW_GOT_YOU, Message::LOSE),
             RunResult::UserWin => format!("{}\n", Message::WIN),
             RunResult::UserQuit => String::from("")
         };
@@ -245,24 +249,26 @@ type LastTraversed = usize;
 enum ShootResult {
     Miss,
     Hit,
+    Suicide,
     Remaining(NumRemaining, LastTraversed)
 }
 
-fn shoot(rooms: &[RoomNum], wumpus: RoomNum) -> Option<RunResult> {
+fn shoot(rooms: &[RoomNum], player: RoomNum, wumpus: RoomNum) -> Option<RunResult> {
     // rooms length must contain the player and at least one other room to
     // traverse.
     if rooms.len() < 2 || rooms.len() > MAX_TRAVERSABLE + 1 {
         return None;
     }
-    match traverse(rooms, wumpus) {
+    match traverse(rooms, player, wumpus) {
         ShootResult::Hit => Some(RunResult::UserWin),
+        ShootResult::Suicide => Some(RunResult::UserSuicide),
         ShootResult::Miss => {
             println!("{}", String::from(Message::MISSED));
             None
         }
         ShootResult::Remaining(remaining, last_traversed) => {
             let remaining_rooms = gen_rand_valid_path_from(remaining, last_traversed);
-            shoot(&remaining_rooms, wumpus) // recursive call at most once.
+            shoot(&remaining_rooms, player, wumpus) // recursive call at most once.
         }
     }
 }
@@ -270,7 +276,7 @@ fn shoot(rooms: &[RoomNum], wumpus: RoomNum) -> Option<RunResult> {
 /// Traverse crooked arrow across rooms starting from the player's room. The
 /// rooms array starts with the player's room, but this room doesn't count a
 /// room that can be traversed.
-fn traverse(rooms: &[RoomNum], wumpus: RoomNum) -> ShootResult {
+fn traverse(rooms: &[RoomNum], player: RoomNum, wumpus: RoomNum) -> ShootResult {
     for (num_traversed, w) in rooms.windows(2).enumerate() {
         let a = w[0];
         let b = w[1];
@@ -279,6 +285,9 @@ fn traverse(rooms: &[RoomNum], wumpus: RoomNum) -> ShootResult {
             return ShootResult::Remaining(rooms.len() - num_traversed, a);
         }
         println!("{}", b);
+        if b == player {
+            return ShootResult::Suicide;
+        }
         if b == wumpus {
             return ShootResult::Hit;
         }
