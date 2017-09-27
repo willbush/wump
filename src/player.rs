@@ -18,6 +18,7 @@ pub enum Action {
 
 pub struct Player {
     pub room: Cell<RoomNum>,
+    pub arrow_count: Cell<u8>,
     director: Box<Director>
 }
 
@@ -25,12 +26,25 @@ impl Player {
     pub fn new(room: RoomNum) -> Self {
         Player {
             director: box PlayerDirector,
-            room: Cell::new(room)
+            room: Cell::new(room),
+            arrow_count: Cell::new(5)
         }
     }
 
     pub fn get_action(&self, state: &State) -> Action {
-        self.director.next(state)
+        let action = self.director.next(state);
+        if is_shoot(&action) {
+            let c = self.arrow_count.get();
+            self.arrow_count.set(c - 1);
+        }
+        action
+    }
+}
+
+fn is_shoot(a: &Action) -> bool {
+    match *a {
+        Action::Shoot(..) => true,
+        _ => false
     }
 }
 

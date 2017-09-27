@@ -11,7 +11,7 @@ struct MockDirector {
 impl Director for MockDirector {
     fn next(&self, _: &State) -> Action {
         let mut actions = self.actions.borrow_mut();
-        actions.pop().unwrap()
+        actions.pop().expect("Ran out of actions to pop!")
     }
 }
 
@@ -34,7 +34,8 @@ fn can_move_player_and_quit() {
         pit1: 19,
         pit2: 18,
         bat1: 17,
-        bat2: 16
+        bat2: 16,
+        arrow_count: 5
     };
     let expected_states = create_player_state_trans_from(&initial_state, &vec![2, 3, 12]);
 
@@ -56,7 +57,8 @@ fn can_move_and_fall_in_pit() {
         pit1: 2,
         pit2: 18,
         bat1: 19,
-        bat2: 20
+        bat2: 20,
+        arrow_count: 5
     };
 
     let mut game = Game::new_with_player(player, initial_state.to_owned());
@@ -68,9 +70,37 @@ fn can_move_and_fall_in_pit() {
     assert_eq!(expected_states, actual_states);
 }
 
+#[test]
+fn can_run_out_of_arrows_and_lose() {
+    let player_room = 1;
+    let actions = vec![Action::Shoot(vec![player_room, 2])];
+    let player = Player {
+        room: Cell::new(player_room),
+        arrow_count: Cell::new(1),
+        director: box MockDirector { actions: RefCell::new(actions) }
+    };
+
+    let initial_state = State {
+        player: player_room,
+        wumpus: 17,
+        pit1: 2,
+        pit2: 18,
+        bat1: 19,
+        bat2: 20,
+        arrow_count: 1
+    };
+
+    let mut game = Game::new_with_player(player, initial_state.to_owned());
+
+    let (_, result) = game.run();
+
+    assert_eq!(RunResult::UserRanOutOfArrows, result);
+}
+
 pub fn create_mock_directed_player(room: RoomNum, actions: Vec<Action>) -> Player {
     Player {
         room: Cell::new(room),
+        arrow_count: Cell::new(5),
         director: box MockDirector { actions: RefCell::new(actions) }
     }
 }
@@ -87,7 +117,8 @@ fn create_player_state_trans_from(initial_state: &State, room_trans: &Vec<RoomNu
             pit1: initial_state.pit1,
             pit2: initial_state.pit2,
             bat1: initial_state.bat1,
-            bat2: initial_state.bat2
+            bat2: initial_state.bat2,
+            arrow_count: initial_state.arrow_count
         });
     }
     result

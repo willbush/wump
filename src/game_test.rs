@@ -61,16 +61,16 @@ fn can_miss_by_one() {
             // crooked arrow to traverse. [2, 6]
             let room_count = thread_rng().gen_range(2, MAX_TRAVERSABLE + 2);
             let rooms: Vec<_> = (room_num..(room_num + room_count)).collect();
-            let wumpus_room = room_num + room_count;
+            let wumpus = room_num + room_count;
 
-            let shoot_result = traverse(&rooms, rooms[0], wumpus_room);
+            let shoot_result = traverse(&rooms, &get_inital_state(rooms[0], wumpus));
 
             assert_eq!(
                 ShootResult::Miss,
                 shoot_result,
                 "rooms: {:?} wumpus: {}",
                 rooms,
-                wumpus_room
+                wumpus
             );
         });
     }
@@ -86,9 +86,8 @@ fn can_hit() {
         perform_trial(4, &|| {
             let room_count = thread_rng().gen_range(2, MAX_TRAVERSABLE + 2);
             let rooms: Vec<_> = (room_num..(room_num + room_count)).collect();
-            let wumpus_room = rooms[rooms.len() - 1];
-
-            let shoot_result = traverse(&rooms, rooms[0], wumpus_room);
+            let wumpus = rooms[rooms.len() - 1];
+            let shoot_result = traverse(&rooms, &get_inital_state(rooms[0], wumpus));
 
             assert_eq!(ShootResult::Hit, shoot_result);
         });
@@ -103,7 +102,7 @@ fn invalid_first_room_causes_random_traversal(room_to_shoot: RoomNum) -> TestRes
         let wumpus = 20;
         let rooms = [player, room_to_shoot];
         // cannot shoot from a room not adjacent to the player.
-        let shoot_result = traverse(&rooms, player, wumpus);
+        let shoot_result = traverse(&rooms, &get_inital_state(player, wumpus));
 
         TestResult::from_bool(ShootResult::Remaining(2, player) == shoot_result)
     } else {
@@ -126,7 +125,7 @@ fn disjoint_room_causes_random_traversal() {
         paths.push(disjoint_room);
 
         let wumpus = 21; // off the map so we don't hit the Wumpus.
-        let shoot_result = traverse(&paths, paths[0], wumpus);
+        let shoot_result = traverse(&paths, &get_inital_state(paths[0], wumpus));
 
         let last_valid = paths[paths.len() - 2];
 
@@ -146,7 +145,7 @@ fn player_can_suicide() {
     let rooms = [1, 2, 3, 4, 5, 1];
     let player = 1;
     let wumpus = 20;
-    let shoot_result = traverse(&rooms, player, wumpus);
+    let shoot_result = traverse(&rooms, &get_inital_state(player, wumpus));
     assert_eq!(ShootResult::Suicide, shoot_result);
 }
 
@@ -156,6 +155,15 @@ fn get_rand_room_disjoint_from(room: RoomNum) -> RoomNum {
         if !map::is_adj(r, room) {
             return r;
         }
+    }
+}
+
+fn get_inital_state(player: RoomNum, wumpus: RoomNum) -> State {
+    State {
+        player,
+        wumpus,
+        arrow_count: 5,
+        ..Default::default()
     }
 }
 

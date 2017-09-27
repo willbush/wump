@@ -37,6 +37,7 @@ pub enum RunResult {
     UserQuit,
     UserWin,
     UserSuicide,
+    UserRanOutOfArrows,
     DeathByBottomlessPit,
     DeathByWumpus
 }
@@ -48,7 +49,8 @@ pub struct State {
     pub pit1: RoomNum,
     pub pit2: RoomNum,
     pub bat1: RoomNum,
-    pub bat2: RoomNum
+    pub bat2: RoomNum,
+    pub arrow_count: u8
 }
 
 pub struct Game {
@@ -150,9 +152,7 @@ impl Game {
                 None
             }
             Action::Quit => Some(RunResult::UserQuit),
-            Action::Shoot(ref rooms) => {
-                shoot(rooms, self.player.room.get(), self.wumpus.room.get())
-            }
+            Action::Shoot(ref rooms) => shoot(rooms, &self.get_state()),
             _ => panic!("illegal action: {:?}", action)
         }
     }
@@ -203,7 +203,8 @@ impl Game {
             pit1: self.pit1_room,
             pit2: self.pit2_room,
             bat1: self.bat1_room,
-            bat2: self.bat2_room
+            bat2: self.bat2_room,
+            arrow_count: self.player.arrow_count.get()
         }
     }
 
@@ -216,7 +217,7 @@ impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "r rooms: player {}, wumpus {}, pit1 {}, pit2 {}, bat1 {}, bat2 {}.",
+            "rooms: player {}, wumpus {}, pit1 {}, pit2 {}, bat1 {}, bat2 {}.",
             self.player.room.get(),
             self.wumpus.room.get(),
             self.pit1_room,
@@ -235,6 +236,9 @@ impl fmt::Display for RunResult {
             }
             RunResult::DeathByWumpus => format!("{}\n{}\n", Message::WUMPUS_GOT_YOU, Message::LOSE),
             RunResult::UserSuicide => format!("{}\n{}\n", Message::ARROW_GOT_YOU, Message::LOSE),
+            RunResult::UserRanOutOfArrows => {
+                format!("{}\n{}\n", Message::OUT_OF_ARROWS, Message::LOSE)
+            }
             RunResult::UserWin => format!("{}\n", Message::WIN),
             RunResult::UserQuit => String::from("")
         };
@@ -253,30 +257,32 @@ enum ShootResult {
     Remaining(NumRemaining, LastTraversed)
 }
 
-fn shoot(rooms: &[RoomNum], player: RoomNum, wumpus: RoomNum) -> Option<RunResult> {
+fn shoot(rooms: &[RoomNum], s: &State) -> Option<RunResult> {
     // rooms length must contain the player and at least one other room to
     // traverse.
     if rooms.len() < 2 || rooms.len() > MAX_TRAVERSABLE + 1 {
-        return None;
+        panic!("shoot function called with a length out of bounds: {}", rooms.len());
     }
-    match traverse(rooms, player, wumpus) {
+    match traverse(rooms, &s) {
         ShootResult::Hit => Some(RunResult::UserWin),
         ShootResult::Suicide => Some(RunResult::UserSuicide),
         ShootResult::Miss => {
             println!("{}", String::from(Message::MISSED));
-            None
+            if s.arrow_count == 0 {
+                Some(RunResult::UserRanOutOfArrows)
+            } else {
+                None
+            }
         }
         ShootResult::Remaining(remaining, last_traversed) => {
             let remaining_rooms = gen_rand_valid_path_from(remaining, last_traversed);
-            shoot(&remaining_rooms, player, wumpus) // recursive call at most once.
+            shoot(&remaining_rooms, &s) // recursive call at most once.
         }
     }
 }
 
-/// Traverse crooked arrow across rooms starting from the player's room. The
-/// rooms array starts with the player's room, but this room doesn't count a
-/// room that can be traversed.
-fn traverse(rooms: &[RoomNum], player: RoomNum, wumpus: RoomNum) -> ShootResult {
+/// Traverse crooked arrow across rooms starting from the player's room.
+fn traverse(rooms: &[RoomNum], s: &State) -> ShootResult {
     for (num_traversed, w) in rooms.windows(2).enumerate() {
         let a = w[0];
         let b = w[1];
@@ -285,10 +291,10 @@ fn traverse(rooms: &[RoomNum], player: RoomNum, wumpus: RoomNum) -> ShootResult 
             return ShootResult::Remaining(rooms.len() - num_traversed, a);
         }
         println!("{}", b);
-        if b == player {
+        if b == s.player {
             return ShootResult::Suicide;
         }
-        if b == wumpus {
+        if b == s.wumpus {
             return ShootResult::Hit;
         }
     }
