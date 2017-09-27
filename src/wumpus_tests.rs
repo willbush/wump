@@ -158,3 +158,16 @@ fn awake_wumpus_can_avoid_pits_when_moving() {
     );
     assert_eq!(None, update_result);
 }
+
+#[test]
+fn player_with_arrows_below_max_capacity_wakes_wumpus() {
+    let wumpus_room = 15;
+    let wumpus = Wumpus::new(wumpus_room);
+    let result = wumpus.try_update(&State {
+        wumpus: wumpus_room,
+        arrow_count: 4,
+        ..Default::default()
+    });
+    assert!(wumpus.is_awake.get());
+    assert_eq!(None, result);
+}

@@ -4,6 +4,7 @@ pub mod wumpus_tests;
 
 use message::Warning;
 use game::{Hazzard, RunResult, State, UpdateResult};
+use player;
 use map::{adj_rooms_to, is_adj, RoomNum};
 use rand::{thread_rng, Rng};
 use std::cell::Cell;
@@ -40,13 +41,14 @@ impl Hazzard for Wumpus {
 
     fn try_update(&self, s: &State) -> Option<UpdateResult> {
         let is_bumped = !self.is_awake.get() && s.player == self.room.get();
+        let arrow_shot_awakes_wumpus = !self.is_awake.get() && s.arrow_count < player::ARROW_CAPACITY;
 
-        if is_bumped {
-            self.is_awake.replace(true);
+        if is_bumped || arrow_shot_awakes_wumpus {
+            self.is_awake.set(true);
         }
         if self.is_awake.get() && self.director.feels_like_moving() {
             let next_room = self.director.get_room(s);
-            self.room.replace(next_room);
+            self.room.set(next_room);
         }
         if self.is_awake.get() && s.player == self.room.get() {
             if is_bumped {

@@ -9,6 +9,8 @@ use map::{adj_rooms_to, is_adj};
 use util::{print, read_line, read_sanitized_line};
 use std::cell::Cell;
 
+pub const ARROW_CAPACITY: u8 = 5;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     Shoot(Vec<RoomNum>),
@@ -27,7 +29,7 @@ impl Player {
         Player {
             director: box PlayerDirector,
             room: Cell::new(room),
-            arrow_count: Cell::new(5)
+            arrow_count: Cell::new(ARROW_CAPACITY)
         }
     }
 
