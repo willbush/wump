@@ -28,13 +28,8 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let is_cheating = args.len() > 1 && &args[1] == "cheat";
 
-    let mut game = Game::new();
-    if is_cheating {
-        game.enable_cheat_mode();
-    }
-    let (_, run_result) = game.run();
-
-    print!("{}", run_result);
+    let mut game = Game::new(is_cheating);
+    print!("{}", game.run());
 }
 
 fn print_logo() {

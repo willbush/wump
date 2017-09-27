@@ -41,7 +41,8 @@ impl Hazzard for Wumpus {
 
     fn try_update(&self, s: &State) -> Option<UpdateResult> {
         let is_bumped = !self.is_awake.get() && s.player == self.room.get();
-        let arrow_shot_awakes_wumpus = !self.is_awake.get() && s.arrow_count < player::ARROW_CAPACITY;
+        let arrow_shot_awakes_wumpus =
+            !self.is_awake.get() && s.arrow_count < player::ARROW_CAPACITY;
 
         if is_bumped || arrow_shot_awakes_wumpus {
             self.is_awake.set(true);
@@ -49,6 +50,10 @@ impl Hazzard for Wumpus {
         if self.is_awake.get() && self.director.feels_like_moving() {
             let next_room = self.director.get_room(s);
             self.room.set(next_room);
+
+            if s.is_cheating {
+                println!("Wumpus moved to: {}", next_room);
+            }
         }
         if self.is_awake.get() && s.player == self.room.get() {
             if is_bumped {

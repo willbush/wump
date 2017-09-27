@@ -50,7 +50,8 @@ pub struct State {
     pub pit2: RoomNum,
     pub bat1: RoomNum,
     pub bat2: RoomNum,
-    pub arrow_count: u8
+    pub arrow_count: u8,
+    pub is_cheating: bool
 }
 
 pub struct Game {
@@ -65,7 +66,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(is_cheating: bool) -> Self {
         let (player_room, wumpus_room, pit1_room, pit2_room, bat1_room, bat2_room) =
             gen_unique_rooms();
 
@@ -88,7 +89,7 @@ impl Game {
             bat1_room,
             bat2_room,
             hazzards,
-            is_cheating: false
+            is_cheating
         }
     }
 
@@ -115,25 +116,20 @@ impl Game {
         }
     }
 
-    pub fn run(&mut self) -> (Vec<State>, RunResult) {
-        let mut states: Vec<State> = Vec::new();
-
+    pub fn run(&mut self) -> RunResult {
         loop {
             if self.is_cheating {
                 println!("{}", self);
             }
             if let Some(run_result) = self.update() {
-                return (states, run_result);
+                return run_result;
             }
-
             self.print_any_hazzard_warnings();
 
-            let state = self.get_state();
-            states.push(state.to_owned());
-            let action = self.player.get_action(&state);
+            let action = self.player.get_action(&self.get_state());
 
             if let Some(run_result) = self.process(&action) {
-                return (states, run_result);
+                return run_result;
             }
         }
     }
@@ -204,12 +200,9 @@ impl Game {
             pit2: self.pit2_room,
             bat1: self.bat1_room,
             bat2: self.bat2_room,
-            arrow_count: self.player.arrow_count.get()
+            arrow_count: self.player.arrow_count.get(),
+            is_cheating: self.is_cheating
         }
-    }
-
-    pub fn enable_cheat_mode(&mut self) {
-        self.is_cheating = true;
     }
 }
 
@@ -261,7 +254,10 @@ fn shoot(rooms: &[RoomNum], s: &State) -> Option<RunResult> {
     // rooms length must contain the player and at least one other room to
     // traverse.
     if rooms.len() < 2 || rooms.len() > MAX_TRAVERSABLE + 1 {
-        panic!("shoot function called with a length out of bounds: {}", rooms.len());
+        panic!(
+            "shoot function called with a length out of bounds: {}",
+            rooms.len()
+        );
     }
     match traverse(rooms, &s) {
         ShootResult::Hit => Some(RunResult::UserWin),

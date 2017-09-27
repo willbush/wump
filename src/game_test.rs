@@ -44,9 +44,7 @@ fn player_can_get_multi_snatched_into_pit() {
         hazzards,
         is_cheating: false
     };
-    let (_, result) = game.run();
-
-    assert_eq!(RunResult::DeathByBottomlessPit, result);
+    assert_eq!(RunResult::DeathByBottomlessPit, game.run());
 }
 
 /// loop up to the max where we can shoot through up to 5 rooms in line and

@@ -35,15 +35,13 @@ fn can_move_player_and_quit() {
         pit2: 18,
         bat1: 17,
         bat2: 16,
-        arrow_count: 5
+        arrow_count: 5,
+        is_cheating: false
     };
-    let expected_states = create_player_state_trans_from(&initial_state, &vec![2, 3, 12]);
 
     let mut game = Game::new_with_player(player, initial_state);
-    let (actual_states, result) = game.run();
 
-    assert_eq!(RunResult::UserQuit, result);
-    assert_eq!(expected_states, actual_states);
+    assert_eq!(RunResult::UserQuit, game.run());
 }
 
 #[test]
@@ -58,16 +56,13 @@ fn can_move_and_fall_in_pit() {
         pit2: 18,
         bat1: 19,
         bat2: 20,
-        arrow_count: 5
+        arrow_count: 5,
+        is_cheating: false
     };
 
     let mut game = Game::new_with_player(player, initial_state.to_owned());
 
-    let expected_states = vec![initial_state];
-    let (actual_states, result) = game.run();
-
-    assert_eq!(RunResult::DeathByBottomlessPit, result);
-    assert_eq!(expected_states, actual_states);
+    assert_eq!(RunResult::DeathByBottomlessPit, game.run());
 }
 
 #[test]
@@ -87,14 +82,13 @@ fn can_run_out_of_arrows_and_lose() {
         pit2: 18,
         bat1: 19,
         bat2: 20,
-        arrow_count: 1
+        arrow_count: 1,
+        is_cheating: false
     };
 
     let mut game = Game::new_with_player(player, initial_state.to_owned());
 
-    let (_, result) = game.run();
-
-    assert_eq!(RunResult::UserRanOutOfArrows, result);
+    assert_eq!(RunResult::UserRanOutOfArrows, game.run());
 }
 
 pub fn create_mock_directed_player(room: RoomNum, actions: Vec<Action>) -> Player {
@@ -103,25 +97,6 @@ pub fn create_mock_directed_player(room: RoomNum, actions: Vec<Action>) -> Playe
         arrow_count: Cell::new(5),
         director: box MockDirector { actions: RefCell::new(actions) }
     }
-}
-
-/// Create state transitions starting from the given initial state
-fn create_player_state_trans_from(initial_state: &State, room_trans: &Vec<RoomNum>) -> Vec<State> {
-    let mut result = Vec::new();
-    result.push(initial_state.clone());
-
-    for room in room_trans.iter() {
-        result.push(State {
-            player: *room,
-            wumpus: initial_state.wumpus,
-            pit1: initial_state.pit1,
-            pit2: initial_state.pit2,
-            bat1: initial_state.bat1,
-            bat2: initial_state.bat2,
-            arrow_count: initial_state.arrow_count
-        });
-    }
-    result
 }
 
 /// A path is too crooked for an arrow if it follows an A-B-A path where A is
