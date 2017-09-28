@@ -59,7 +59,7 @@ impl Hazzard for Wumpus {
             if is_bumped {
                 Some(UpdateResult::BumpAndDie)
             } else {
-                Some(UpdateResult::Death(RunResult::DeathByWumpus))
+                Some(UpdateResult::Death(RunResult::KilledByWumpus))
             }
         } else if is_bumped {
             Some(UpdateResult::BumpAndLive)

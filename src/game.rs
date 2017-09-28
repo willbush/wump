@@ -34,12 +34,12 @@ pub enum UpdateResult {
 
 #[derive(Debug, PartialEq)]
 pub enum RunResult {
-    UserQuit,
-    UserWin,
-    UserSuicide,
-    UserRanOutOfArrows,
-    DeathByBottomlessPit,
-    DeathByWumpus
+    Quit,
+    Win,
+    Suicide,
+    RanOutOfArrows,
+    KilledByPit,
+    KilledByWumpus
 }
 
 #[derive(Clone, PartialEq, Default, Debug)]
@@ -67,29 +67,41 @@ pub struct Game {
 
 impl Game {
     pub fn new(is_cheating: bool) -> Self {
-        let (player_room, wumpus_room, pit1_room, pit2_room, bat1_room, bat2_room) =
-            gen_unique_rooms();
+        let (player, wumpus, pit1, pit2, bat1, bat2) = gen_unique_rooms();
 
-        let player = box Player::new(player_room);
-        let wumpus = Rc::new(Wumpus::new(wumpus_room));
+        Game::new_using(&State {
+            player,
+            wumpus,
+            pit1,
+            pit2,
+            bat1,
+            bat2,
+            is_cheating,
+            ..Default::default()
+        })
+    }
+
+    pub fn new_using(s: &State) -> Self {
+        let player = box Player::new(s.player);
+        let wumpus = Rc::new(Wumpus::new(s.wumpus));
 
         let hazzards: Vec<Rc<Hazzard>> = vec![
             wumpus.clone(),
-            Rc::new(BottomlessPit { room: pit1_room }),
-            Rc::new(BottomlessPit { room: pit2_room }),
-            Rc::new(SuperBat::new(bat1_room)),
-            Rc::new(SuperBat::new(bat2_room)),
+            Rc::new(BottomlessPit { room: s.pit1 }),
+            Rc::new(BottomlessPit { room: s.pit2 }),
+            Rc::new(SuperBat::new(s.bat1)),
+            Rc::new(SuperBat::new(s.bat2)),
         ];
 
         Game {
             player,
             wumpus,
-            pit1_room,
-            pit2_room,
-            bat1_room,
-            bat2_room,
             hazzards,
-            is_cheating
+            pit1_room: s.pit1,
+            pit2_room: s.pit2,
+            bat1_room: s.bat1,
+            bat2_room: s.bat2,
+            is_cheating: s.is_cheating
         }
     }
 
@@ -134,6 +146,19 @@ impl Game {
         }
     }
 
+    pub fn get_state(&self) -> State {
+        State {
+            player: self.player.room.get(),
+            wumpus: self.wumpus.room.get(),
+            pit1: self.pit1_room,
+            pit2: self.pit2_room,
+            bat1: self.bat1_room,
+            bat2: self.bat2_room,
+            arrow_count: self.player.arrow_count.get(),
+            is_cheating: self.is_cheating
+        }
+    }
+
     fn print_any_hazzard_warnings(&self) {
         self.hazzards
             .iter()
@@ -147,7 +172,7 @@ impl Game {
                 self.player.room.replace(next_room);
                 None
             }
-            Action::Quit => Some(RunResult::UserQuit),
+            Action::Quit => Some(RunResult::Quit),
             Action::Shoot(ref rooms) => shoot(rooms, &self.get_state()),
             _ => panic!("illegal action: {:?}", action)
         }
@@ -172,7 +197,7 @@ impl Game {
                     }
                     UpdateResult::BumpAndDie => {
                         println!("{}", Message::WUMPUS_BUMP);
-                        return Some(RunResult::DeathByWumpus);
+                        return Some(RunResult::KilledByWumpus);
                     }
                 }
             }
@@ -190,19 +215,6 @@ impl Game {
             .iter()
             .filter_map(|h| h.try_update(&state))
             .next()
-    }
-
-    fn get_state(&self) -> State {
-        State {
-            player: self.player.room.get(),
-            wumpus: self.wumpus.room.get(),
-            pit1: self.pit1_room,
-            pit2: self.pit2_room,
-            bat1: self.bat1_room,
-            bat2: self.bat2_room,
-            arrow_count: self.player.arrow_count.get(),
-            is_cheating: self.is_cheating
-        }
     }
 }
 
@@ -224,16 +236,14 @@ impl fmt::Display for Game {
 impl fmt::Display for RunResult {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let msg = match *self {
-            RunResult::DeathByBottomlessPit => {
-                format!("{}\n{}\n", Message::FELL_IN_PIT, Message::LOSE)
+            RunResult::KilledByPit => format!("{}\n{}\n", Message::FELL_IN_PIT, Message::LOSE),
+            RunResult::KilledByWumpus => {
+                format!("{}\n{}\n", Message::WUMPUS_GOT_YOU, Message::LOSE)
             }
-            RunResult::DeathByWumpus => format!("{}\n{}\n", Message::WUMPUS_GOT_YOU, Message::LOSE),
-            RunResult::UserSuicide => format!("{}\n{}\n", Message::ARROW_GOT_YOU, Message::LOSE),
-            RunResult::UserRanOutOfArrows => {
-                format!("{}\n{}\n", Message::OUT_OF_ARROWS, Message::LOSE)
-            }
-            RunResult::UserWin => format!("{}\n", Message::WIN),
-            RunResult::UserQuit => String::from("")
+            RunResult::Suicide => format!("{}\n{}\n", Message::ARROW_GOT_YOU, Message::LOSE),
+            RunResult::RanOutOfArrows => format!("{}\n{}\n", Message::OUT_OF_ARROWS, Message::LOSE),
+            RunResult::Win => format!("{}\n", Message::WIN),
+            RunResult::Quit => String::from("")
         };
         write!(f, "{}", msg)
     }
@@ -260,12 +270,12 @@ fn shoot(rooms: &[RoomNum], s: &State) -> Option<RunResult> {
         );
     }
     match traverse(rooms, &s) {
-        ShootResult::Hit => Some(RunResult::UserWin),
-        ShootResult::Suicide => Some(RunResult::UserSuicide),
+        ShootResult::Hit => Some(RunResult::Win),
+        ShootResult::Suicide => Some(RunResult::Suicide),
         ShootResult::Miss => {
             println!("{}", String::from(Message::MISSED));
             if s.arrow_count == 0 {
-                Some(RunResult::UserRanOutOfArrows)
+                Some(RunResult::RanOutOfArrows)
             } else {
                 None
             }

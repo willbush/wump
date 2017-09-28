@@ -42,8 +42,8 @@ impl Logo {
 
 impl Prompt {
     pub const ACTION: &'static str = "Shoot, Move or Quit(S - M - Q)? ";
-    pub const PLAY: &'static str = "Play again? (Y-N)";
-    pub const SETUP: &'static str = "Same Setup? (Y-N)";
+    pub const PLAY: &'static str = "Play again? (Y-N) ";
+    pub const SETUP: &'static str = "Same Setup? (Y-N) ";
 }
 
 impl Message {

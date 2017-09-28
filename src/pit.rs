@@ -9,7 +9,7 @@ pub struct BottomlessPit {
 impl Hazzard for BottomlessPit {
     fn try_update(&self, s: &State) -> Option<UpdateResult> {
         if s.player == self.room {
-            Some(UpdateResult::Death(RunResult::DeathByBottomlessPit))
+            Some(UpdateResult::Death(RunResult::KilledByPit))
         } else {
             None
         }
@@ -54,7 +54,7 @@ mod pit_tests {
             player: player_room,
             ..Default::default()
         });
-        let expected = Some(UpdateResult::Death(RunResult::DeathByBottomlessPit));
+        let expected = Some(UpdateResult::Death(RunResult::KilledByPit));
         assert_eq!(expected, update_result);
     }
 }

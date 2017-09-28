@@ -86,7 +86,7 @@ fn awake_wumpus_can_kill_player() {
         player: player_room,
         ..Default::default()
     });
-    let expected = Some(UpdateResult::Death(RunResult::DeathByWumpus));
+    let expected = Some(UpdateResult::Death(RunResult::KilledByWumpus));
     assert_eq!(expected, update_result);
 }
 

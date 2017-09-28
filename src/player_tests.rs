@@ -41,7 +41,7 @@ fn can_move_player_and_quit() {
 
     let mut game = Game::new_with_player(player, initial_state);
 
-    assert_eq!(RunResult::UserQuit, game.run());
+    assert_eq!(RunResult::Quit, game.run());
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn can_move_and_fall_in_pit() {
 
     let mut game = Game::new_with_player(player, initial_state.to_owned());
 
-    assert_eq!(RunResult::DeathByBottomlessPit, game.run());
+    assert_eq!(RunResult::KilledByPit, game.run());
 }
 
 #[test]
@@ -88,7 +88,7 @@ fn can_run_out_of_arrows_and_lose() {
 
     let mut game = Game::new_with_player(player, initial_state.to_owned());
 
-    assert_eq!(RunResult::UserRanOutOfArrows, game.run());
+    assert_eq!(RunResult::RanOutOfArrows, game.run());
 }
 
 pub fn create_mock_directed_player(room: RoomNum, actions: Vec<Action>) -> Player {
