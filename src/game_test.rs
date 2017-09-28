@@ -181,15 +181,9 @@ fn get_rand_room_disjoint_from(room: RoomNum) -> RoomNum {
 }
 
 fn get_inital_state(player: RoomNum, wumpus: RoomNum) -> State {
-    State {
-        player,
-        wumpus,
-        arrow_count: 5,
-        ..Default::default()
-    }
+    State { player, wumpus, arrow_count: 5, ..Default::default() }
 }
 
 fn perform_trial(trial_count: u32, trial: &Fn()) {
     (0..trial_count).for_each(|_| trial());
 }
-

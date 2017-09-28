@@ -5,5 +5,5 @@ An implementation of the Hunt the Wumpus text based game in Rust. Implementing t
 
 ## TODO
 
-* reformat project
+* add some docs
 

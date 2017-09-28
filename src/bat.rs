@@ -17,10 +17,7 @@ pub struct SuperBat {
 
 impl SuperBat {
     pub fn new(room: RoomNum) -> Self {
-        SuperBat {
-            room,
-            provider: box BatRoomProvider
-        }
+        SuperBat { room, provider: box BatRoomProvider }
     }
 }
 
