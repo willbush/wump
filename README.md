@@ -3,8 +3,7 @@
 
 - [wump - The game of Hunt the Wumpus](#wump---the-game-of-hunt-the-wumpus)
 - [Introduction](#introduction)
-- [Opinionated How?](#opinionated-how)
-    - [Possible Differences](#possible-differences)
+- [Building and Running](#building-and-running)
 - [Why wump in Rust?](#why-wump-in-rust)
 - [How to Play](#how-to-play)
     - [Moving](#moving)
@@ -13,7 +12,8 @@
     - [Shooting](#shooting)
     - [Winning the game](#winning-the-game)
     - [Cheat Mode](#cheat-mode)
-- [Building and Running](#building-and-running)
+- [Opinionated How?](#opinionated-how)
+    - [Possible Differences](#possible-differences)
 
 <!-- markdown-toc end -->
 
@@ -25,59 +25,11 @@ This is an opinionated implementation of Gregory Yob's [Hunt the
 Wumpus](https://en.wikipedia.org/wiki/Hunt_the_Wumpus) text based 1972 game
 using Rust.
 
-# Opinionated How?
+# Building and Running
 
-There are many variations on this game, and this one is no different. This
-implementation was based on requirements as I understood them for the game and
-my own opinions how things ought to work. I honestly didn't spend any time
-playing the original game or trying to deconstruct exactly how the original did
-things. However, now that I finished and spent some time to look at other
-implementations, I'm surprised how simplified many of them are.
-
-In fact, this might be one of the highest lines of code implementations of the
-game. Perhaps part of that is me attempting to model the game entities in an
-near object oriented way, which might have been a mistake. However, I'd like to
-think part of that has to do with me not ignoring edge cases and not having lazy
-implementations of different features as I see so many other implementations do.
-
-## Possible Differences
-
-If you're curious about what might be different from other implementations, then
-here are some differences I've noticed.
-
-- The Wumpus avoids bottomless pits instead of moving through them.
-
-- When the Wumpus is awakened by being bumped by the player its 75% of moving
-  still applies, and the player will live or die depending on if the Wumpus
-  moves or not.
-
-- Super bats can snatch the player into its own room or the other bat room,
-  which causes it to get snatched again. Snatching loops until the player is
-  snatched into a non-super bat room. For each time the player is snatched it is
-  treated as a normal game turn, printing out the hazard warnings and possibly
-  having the Wumpus move (if awake).
-
-- The player is asked for a space separated list of rooms given all at once
-  instead of incrementally. Rooms are still validated that they don't contain a
-  "too crooked" A-B-A path. The edge case of A-B-A path of player to adjacent
-  room and back is not ignored.
-
-- When the arrow traverses the given path and encounters a room that is not
-  adjacent, the arrow then traverses randomly from then on. Some implementations
-  will have the arrow go back to following the given path despite one of the
-  rooms in the middle being disjoint.
-
-- As the arrow randomly traverses it still avoids the too crooked A-B-A path.
-
-- Its not possible for the arrow to kill the wumpus and the player. Arrows stop
-  traversing if it hits the player or the Wumpus.
-
-- When the game starts all game entities are placed in non-overlapping random
-  rooms on the map.
-  
-- The game allows replaying with the same initial random game state (or setup).
-
-- Has a [cheat mode](#cheat-mode).
+1. clone the repo
+2. install [cargo](https://crates.io/) nightly
+3. cd into the directory of the repo and `cargo run --release`
 
 # Why wump in Rust?
 
@@ -211,8 +163,56 @@ For example:
 cargo run cheat --release
 ```
 
-# Building and Running
+# Opinionated How?
 
-1. clone the repo
-2. install [cargo](https://crates.io/) nightly
-3. cd into the directory of the repo and `cargo run --release`
+There are many variations on this game, and this one is no different. This
+implementation was based on requirements as I understood them for the game and
+my own opinions how things ought to work. I honestly didn't spend any time
+playing the original game or trying to deconstruct exactly how the original did
+things. However, now that I am finished and spent some time to look at other
+implementations, I'm surprised how simplified many of them are.
+
+In fact, this might be one of the highest lines of code implementations of the
+game. Perhaps part of that is me attempting to model the game entities in an
+near object oriented way, which might have been a mistake. However, I'd like to
+think part of that has to do with me not ignoring edge cases and not having lazy
+implementations of different features as I see so many other implementations do.
+
+## Possible Differences
+
+If you're curious about what might be different from other implementations, then
+here are some differences I've noticed.
+
+- The Wumpus avoids bottomless pits instead of moving through them.
+
+- When the Wumpus is awakened by being bumped by the player its 75% of moving
+  still applies, and the player will live or die depending on if the Wumpus
+  moves or not.
+
+- Super bats can snatch the player into its own room or the other bat room,
+  which causes it to get snatched again. Snatching loops until the player is
+  snatched into a non-super bat room. For each time the player is snatched it is
+  treated as a normal game turn, printing out the hazard warnings and possibly
+  having the Wumpus move (if awake).
+
+- The player is asked for a space separated list of rooms given all at once
+  instead of incrementally. Rooms are still validated that they don't contain a
+  "too crooked" A-B-A path. The edge case of A-B-A path of player to adjacent
+  room and back is not ignored.
+
+- When the arrow traverses the given path and encounters a room that is not
+  adjacent, the arrow then traverses randomly from then on. Some implementations
+  will have the arrow go back to following the given path despite one of the
+  rooms in the middle being disjoint.
+
+- As the arrow randomly traverses it still avoids the too crooked A-B-A path.
+
+- Its not possible for the arrow to kill the wumpus and the player. Arrows stop
+  traversing if it hits the player or the Wumpus.
+
+- When the game starts all game entities are placed in non-overlapping random
+  rooms on the map.
+  
+- The game allows replaying with the same initial random game state (or setup).
+
+- Has a [cheat mode](#cheat-mode).
