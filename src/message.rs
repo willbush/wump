@@ -1,7 +1,6 @@
 pub struct Logo;
 pub struct Prompt;
 pub struct Message;
-#[allow(dead_code)]
 pub struct Warning;
 
 impl Logo {

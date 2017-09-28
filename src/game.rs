@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "./game_test.rs"]
-mod game_test;
+pub mod game_test;
 
 use std::fmt;
 use std::rc::Rc;
@@ -102,29 +102,6 @@ impl Game {
             bat1_room: s.bat1,
             bat2_room: s.bat2,
             is_cheating: s.is_cheating
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn new_with_player(p: Player, s: State) -> Self {
-        let wumpus = Rc::new(Wumpus::new(s.wumpus));
-        let hazzards: Vec<Rc<Hazzard>> = vec![
-            wumpus.clone(),
-            Rc::new(BottomlessPit { room: s.pit1 }),
-            Rc::new(BottomlessPit { room: s.pit2 }),
-            Rc::new(SuperBat::new(s.bat1)),
-            Rc::new(SuperBat::new(s.bat2)),
-        ];
-
-        Game {
-            player: box p,
-            wumpus,
-            pit1_room: s.pit1,
-            pit2_room: s.pit2,
-            bat1_room: s.bat1,
-            bat2_room: s.bat2,
-            hazzards,
-            is_cheating: false
         }
     }
 

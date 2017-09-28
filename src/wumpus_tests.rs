@@ -58,7 +58,7 @@ impl Director for MockFeelingOnly {
 // if the player is adjacent to the wumpus,
 // then we should get a warning despite if it is awake or not.
 #[quickcheck]
-fn can_warn_property(player: RoomNum, wumpus: RoomNum, is_awake: bool) -> bool {
+fn warns_when_adj(player: RoomNum, wumpus: RoomNum, is_awake: bool) -> bool {
     let wumpus = Wumpus {
         room: Cell::new(wumpus),
         is_awake: Cell::new(is_awake),
@@ -75,7 +75,7 @@ fn can_warn_property(player: RoomNum, wumpus: RoomNum, is_awake: bool) -> bool {
 }
 
 #[test]
-fn awake_wumpus_can_kill_player() {
+fn awake_wumpus_kills_player() {
     let player_room = 1;
     let wumpus = Wumpus {
         room: Cell::new(player_room),
@@ -91,7 +91,7 @@ fn awake_wumpus_can_kill_player() {
 }
 
 #[test]
-fn asleep_wumpus_can_get_bumped_and_kill_or_move() {
+fn bumping_wumpus_while_asleep_kills_or_moves() {
     get_bumped_and(false, 1);
     get_bumped_and(true, 2);
 }
@@ -121,7 +121,7 @@ fn get_bumped_and(feels_like_moving: bool, expected_room_after_bump: RoomNum) {
 }
 
 #[test]
-fn awake_wumpus_can_avoid_pits_when_moving() {
+fn awake_wumpus_avoids_pits_when_moving() {
     // when wumpus is in random room and there are bottomless pits in two adjacent
     // rooms, then the only place to go is room the final adjacent room that's not occupied.
     let wumpus_room = rand_room();

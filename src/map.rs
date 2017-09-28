@@ -67,11 +67,6 @@ pub fn rand_adj_room_to(room: RoomNum) -> RoomNum {
     adj_rooms[i]
 }
 
-/// Generate a valid arrow path of given length.
-pub fn gen_rand_valid_path_of_len(n: usize) -> Vec<RoomNum> {
-    gen_rand_valid_path_from(n, rand_room())
-}
-
 pub fn gen_rand_valid_path_from(len: usize, starting: RoomNum) -> Vec<RoomNum> {
     let mut valid_path = Vec::with_capacity(len);
 
@@ -102,8 +97,13 @@ pub fn rand_valid_adj_room_to(room: RoomNum, previous_room: RoomNum) -> RoomNum 
 }
 
 #[cfg(test)]
-mod map_tests {
+pub mod map_tests {
     use super::*;
+
+    /// Generate a valid arrow path of given length.
+    pub fn gen_rand_valid_path_of_len(n: usize) -> Vec<RoomNum> {
+        gen_rand_valid_path_from(n, rand_room())
+    }
 
     /// One property that exists for the map is if current room is in bounds of
     /// the map and strictly less than the map length, then we should always be
@@ -120,7 +120,7 @@ mod map_tests {
     }
 
     #[test]
-    fn adj_rooms_to_test() {
+    fn can_get_adj_rooms() {
         let expected = (13, 16, 19);
         let actual = adj_rooms_to(20);
         assert_eq!(expected, actual);

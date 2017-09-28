@@ -1,8 +1,11 @@
-use game::{Game, RunResult, MAX_TRAVERSABLE};
-use map::{gen_rand_valid_path_of_len, rand_adj_room_to, rand_room, rand_valid_adj_room_to};
-use std::cell::RefCell;
 use rand::{thread_rng, Rng};
+use std::cell::RefCell;
+
 use super::*;
+use map::{rand_adj_room_to, rand_room, rand_valid_adj_room_to};
+use map::map_tests::gen_rand_valid_path_of_len;
+use game::{RunResult, MAX_TRAVERSABLE};
+use game::game_test::new_game_from;
 
 struct MockDirector {
     pub actions: RefCell<Vec<Action>>
@@ -16,7 +19,7 @@ impl Director for MockDirector {
 }
 
 #[test]
-fn can_move_player_and_quit() {
+fn move_player_and_quit() {
     let player_room = 1;
     // start in room 1, move until in room 12, and quit.
     // actions are in reverse order because they are popped to get the next.
@@ -39,13 +42,13 @@ fn can_move_player_and_quit() {
         is_cheating: false
     };
 
-    let mut game = Game::new_with_player(player, initial_state);
+    let mut game = new_game_from(player, initial_state);
 
     assert_eq!(RunResult::Quit, game.run());
 }
 
 #[test]
-fn can_move_and_fall_in_pit() {
+fn move_and_fall_in_pit() {
     // move into bottomless pit.
     let player = create_mock_directed_player(1, vec![Action::Move(2)]);
 
@@ -60,13 +63,13 @@ fn can_move_and_fall_in_pit() {
         is_cheating: false
     };
 
-    let mut game = Game::new_with_player(player, initial_state.to_owned());
+    let mut game = new_game_from(player, initial_state.to_owned());
 
     assert_eq!(RunResult::KilledByPit, game.run());
 }
 
 #[test]
-fn can_run_out_of_arrows_and_lose() {
+fn running_out_of_arrows_causes_loss() {
     let player_room = 1;
     let actions = vec![Action::Shoot(vec![player_room, 2])];
     let player = Player {
@@ -86,7 +89,7 @@ fn can_run_out_of_arrows_and_lose() {
         is_cheating: false
     };
 
-    let mut game = Game::new_with_player(player, initial_state.to_owned());
+    let mut game = new_game_from(player, initial_state.to_owned());
 
     assert_eq!(RunResult::RanOutOfArrows, game.run());
 }

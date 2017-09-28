@@ -1,13 +1,37 @@
-use map;
+use quickcheck::TestResult;
+use rand::{thread_rng, Rng};
+
+use super::*;
 use player::player_tests::create_mock_directed_player;
 use bat::bat_tests::create_mock_provided_bat;
+use map::map_tests::gen_rand_valid_path_of_len;
 use bat::SuperBat;
 use pit::BottomlessPit;
 use wumpus::Wumpus;
 use player::Action;
-use quickcheck::TestResult;
-use rand::{thread_rng, Rng};
-use super::*;
+use map;
+
+pub fn new_game_from(p: Player, s: State) -> Game {
+    let wumpus = Rc::new(Wumpus::new(s.wumpus));
+    let hazzards: Vec<Rc<Hazzard>> = vec![
+        wumpus.clone(),
+        Rc::new(BottomlessPit { room: s.pit1 }),
+        Rc::new(BottomlessPit { room: s.pit2 }),
+        Rc::new(SuperBat::new(s.bat1)),
+        Rc::new(SuperBat::new(s.bat2)),
+    ];
+
+    Game {
+        player: box p,
+        wumpus,
+        pit1_room: s.pit1,
+        pit2_room: s.pit2,
+        bat1_room: s.bat1,
+        bat2_room: s.bat2,
+        hazzards,
+        is_cheating: false
+    }
+}
 
 /// player moves into bat room, gets snatched back into the bat room, then
 /// snatched to pit room.
@@ -114,7 +138,7 @@ fn disjoint_room_causes_random_traversal() {
         // get rand number from [1, 5] and leave room for the last room to be disjoint.
         let max = MAX_TRAVERSABLE + 1; // player room + 5 traversable rooms we can shoot.
         let room_count = thread_rng().gen_range(1, max);
-        let mut paths = map::gen_rand_valid_path_of_len(room_count);
+        let mut paths = gen_rand_valid_path_of_len(room_count);
 
         assert_eq!(room_count, paths.len(), "must gen paths of the given len.");
 
@@ -168,3 +192,4 @@ fn get_inital_state(player: RoomNum, wumpus: RoomNum) -> State {
 fn perform_trial(trial_count: u32, trial: &Fn()) {
     (0..trial_count).for_each(|_| trial());
 }
+
