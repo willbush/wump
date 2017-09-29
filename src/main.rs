@@ -54,7 +54,7 @@ fn print_logo() {
 
 fn setup_new_game(initial_state: &State, is_cheating: bool) -> Game {
     if player_responds_yes_to(Prompt::SETUP) {
-        Game::new_using(&initial_state)
+        Game::new_using(initial_state)
     } else {
         Game::new(is_cheating)
     }

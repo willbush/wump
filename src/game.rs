@@ -84,9 +84,10 @@ impl Game {
     pub fn new_using(s: &State) -> Self {
         let player = box Player::new(s.player);
         let wumpus = Rc::new(Wumpus::new(s.wumpus));
+        let wumpus_clone = Rc::clone(&wumpus);
 
         let hazzards: Vec<Rc<Hazzard>> = vec![
-            wumpus.clone(),
+            wumpus_clone,
             Rc::new(BottomlessPit { room: s.pit1 }),
             Rc::new(BottomlessPit { room: s.pit2 }),
             Rc::new(SuperBat::new(s.bat1)),
@@ -246,7 +247,7 @@ fn shoot(rooms: &[RoomNum], s: &State) -> Option<RunResult> {
             rooms.len()
         );
     }
-    match traverse(rooms, &s) {
+    match traverse(rooms, s) {
         ShootResult::Hit => Some(RunResult::Win),
         ShootResult::Suicide => Some(RunResult::Suicide),
         ShootResult::Miss => {
@@ -259,7 +260,7 @@ fn shoot(rooms: &[RoomNum], s: &State) -> Option<RunResult> {
         }
         ShootResult::Remaining(remaining, last_traversed) => {
             let remaining_rooms = gen_rand_valid_path_from(remaining, last_traversed);
-            shoot(&remaining_rooms, &s) // recursive call at most once.
+            shoot(&remaining_rooms, s) // recursive call at most once.
         }
     }
 }
