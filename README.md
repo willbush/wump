@@ -6,11 +6,6 @@
 - [Building and Running](#building-and-running)
 - [Why wump in Rust?](#why-wump-in-rust)
 - [How to Play](#how-to-play)
-    - [Moving](#moving)
-    - [Hazards](#hazards)
-    - [Warnings](#warnings)
-    - [Shooting](#shooting)
-    - [Winning the game](#winning-the-game)
     - [Cheat Mode](#cheat-mode)
 - [Opinionated How?](#opinionated-how)
     - [Possible Differences](#possible-differences)
@@ -33,15 +28,11 @@ using Rust.
 
 # Why wump in Rust?
 
-I originally became aware of this game in an intro to video programming class I
-took in college for fun. Throughout the course we implemented this game 3 times
-in C# (text based, 2D, and 3D). I was interested to do it again in Rust in part
-because I wanted get a feel for programming in a non-object oriented language.
-
-One of the things that stood out to me about this game when implementing it in
-rust was just how tricky it can be to implement the requirements without bugs. I
-was therefore interested in implementing this in a more TDD style as bug free as
-possible where before I had only done a lot of manually testing. 
+I simply wanted to learn Rust. I especially wanted to learn how to write
+testable code, test, and mock things out in Rust. I've implemented this game 3
+times (text, 2D, 3D) in a intro to video game programming class I took in
+college for fun, and I wanted to see how Rust "feels like" to program in
+compared to C#.
 
 # How to Play
 
@@ -85,71 +76,6 @@ You as the player:
 - have a bow with 5 magical crooked arrows that can navigate the crooked halls
   of the cave.
 - If you run out of arrows, then you lose.
-
-## Moving
-
-For moving, the game displays a list of the room numbers of connected rooms,
-then asks for the room number of the destination room. If the entered room is
-not connected to the current room, the game displays, "Not possible" and re-asks
-for the destination room. On a move, the game moves the player to the new room,
-then checks for whether the player has hit a hazard in that room.
-
-## Hazards
-
-A superbat attack causes the player to be randomly placed in a new room. When
-this happens, the game displays "Zap--Super Bat snatch! Elsewhereville for you!"
-This is the equivalent to a normal move, in that hazard checks are performed
-after determining the new room.
-
-A bottomless pit kills the player, and ends the game. When this happens, the
-game displays, "YYYIIIIEEEE . . . fell in a pit"
-
-The Wumpus begins the game asleep. If the player shoots an arrow anywhere in the
-map, the Wumpus wakes up. For every turn after the Wumpus is awoken (including
-the turn that woke him up), the Wumpus has a 75% chance of moving to another
-room.
-
-The first time the player enters the room containing the Wumpus, the Wumpus
-wakes up, and the game displays, "... Ooops! Bumped a Wumpus." Once you bump the
-Wumpus the player will die if the Wumpus decides to not leave the room of the
-player with a 25% chance.
-
-## Warnings
-
-- If superbats are in an adjoining room, display the warning message, “Bats
-  nearby”.
-- If a bottomless pit is in an adjoining room, display the warning message, "I
-  feel a draft".
-- If the Wumpus is in an adjoining room, display the warning message, "I smell a
-  Wumpus". Shooting
-
-## Shooting
-
-If the player chooses to shoot, the game then asks for up to five rooms the
-arrow should visit. The game asks the player to enters a space separated list of
-rooms, but does not check if each room correctly follows another. The game does,
-however, check to ensure the arrow does not go from room A to B and back to A
-again. If the player attempts to enter an A-B-A path, the game replies, "Arrows
-aren't that crooked" and the player must re-enter the list of rooms. If the
-entered list of rooms are not correctly connected from one room to the next
-starting with the player's room, then it's path is determined at randomly from
-then on (while still preventing a "too crooked" path).
-
-If the arrow enters the room containing the Wumpus, the game displays, "Aha! You
-got the Wumpus!" (and the player wins the game). If the arrow enters the room
-containing the player, the game displays, "Ouch! Arrow got you!" If the arrow
-goes through its entire path and does not hit the Wumpus (or the player),
-display "Missed!" The player only has 5 arrows, and loses one each time an arrow
-is shot. The game ends when the player runs out of arrows.
-
-## Winning the game
-
-When the player wins the game, display, "Hee hee hee - the Wumpus'll getcha next
-time!!"
-
-Once the game is won or lost the player is given the option to re-play the game
-using the same randomly chosen locations for the Wumpus, bats, and pits, or to
-have new random locations chosen for them.
 
 ## Cheat Mode
 

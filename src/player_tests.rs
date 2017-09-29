@@ -125,7 +125,7 @@ fn can_detect_crooked_arrow_paths() {
         let a = rand_room();
         let b = rand_adj_room_to(a);
         let path = [a, b, a];
-        assert!(is_too_crooked(&path), "{:?}", &path);
+        assert!(is_too_crooked(&path));
     };
 
     // case2: v-A-B-A
@@ -134,7 +134,7 @@ fn can_detect_crooked_arrow_paths() {
         let a = rand_adj_room_to(v);
         let b = rand_valid_adj_room_to(a, v);
         let path = [v, a, b, a];
-        assert!(is_too_crooked(&path), "{:?}", &path);
+        assert!(is_too_crooked(&path));
     };
 
     // case3: v-v-A-B-A
@@ -144,7 +144,7 @@ fn can_detect_crooked_arrow_paths() {
         let a = rand_valid_adj_room_to(v2, v1);
         let b = rand_valid_adj_room_to(a, v2);
         let path = [v1, v2, a, b, a];
-        assert!(is_too_crooked(&path), "{:?}", &path);
+        assert!(is_too_crooked(&path));
     };
     perform_trial(10, &case1);
     perform_trial(10, &case2);

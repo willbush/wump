@@ -146,7 +146,7 @@ impl Game {
     fn process(&mut self, action: &Action) -> Option<RunResult> {
         match *action {
             Action::Move(next_room) if is_adj(self.player.room.get(), next_room) => {
-                self.player.room.replace(next_room);
+                self.player.room.set(next_room);
                 None
             }
             Action::Quit => Some(RunResult::Quit),
@@ -165,7 +165,7 @@ impl Game {
                         return Some(run_result);
                     }
                     UpdateResult::SnatchTo(new_room) => {
-                        self.player.room.replace(new_room);
+                        self.player.room.set(new_room);
                         is_snatched = true;
                         println!("{}", Message::BAT_SNATCH);
                     }
