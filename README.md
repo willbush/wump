@@ -1,32 +1,33 @@
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+
 **Table of Contents**
 
 - [wump - The game of Hunt the Wumpus](#wump---the-game-of-hunt-the-wumpus)
-- [Introduction](#introduction)
-- [Building and Running](#building-and-running)
-- [Why wump in Rust?](#why-wump-in-rust)
-- [How to Play](#how-to-play)
-    - [Cheat Mode](#cheat-mode)
-- [Opinionated How?](#opinionated-how)
-    - [Possible Differences](#possible-differences)
+    - [Introduction](#introduction)
+    - [Building and Running](#building-and-running)
+    - [Why wump in Rust?](#why-wump-in-rust)
+    - [How to Play](#how-to-play)
+        - [Cheat Mode](#cheat-mode)
+    - [Opinionated How?](#opinionated-how)
+        - [Possible Differences](#possible-differences)
 
 <!-- markdown-toc end -->
 
 # wump - The game of Hunt the Wumpus
 
-# Introduction
+## Introduction
 
 This is an opinionated implementation of Gregory Yob's [Hunt the
 Wumpus](https://en.wikipedia.org/wiki/Hunt_the_Wumpus) text based 1972 game
 using Rust.
 
-# Building and Running
+## Building and Running
 
 1. clone the repo
 2. install [cargo](https://crates.io/) nightly
 3. cd into the directory of the repo and `cargo run --release`
 
-# Why wump in Rust?
+## Why wump in Rust?
 
 I simply wanted to learn Rust. I especially wanted to learn how to write
 testable code, test, and mock things out in Rust. I've implemented this game 3
@@ -34,7 +35,7 @@ times (text, 2D, 3D) in a intro to video game programming class I took in
 college for fun, and I wanted to see how Rust "feels like" to program in
 compared to C#.
 
-# How to Play
+## How to Play
 
 The game has 20 rooms which form a dodecahedron. Rooms are numbered from 1 to 20
 and each room is connected to 3 other rooms.
@@ -77,7 +78,7 @@ You as the player:
   of the cave.
 - If you run out of arrows, then you lose.
 
-## Cheat Mode
+### Cheat Mode
 
 I have enabled a cheat mode that displays where everything on the map is and
 where the Wumpus moves everything it moves. Just pass the argument "cheat" to
@@ -89,7 +90,7 @@ For example:
 cargo run cheat --release
 ```
 
-# Opinionated How?
+## Opinionated How?
 
 There are many variations on this game, and this one is no different. This
 implementation was based on requirements as I understood them for the game and
@@ -104,7 +105,7 @@ near object oriented way, which might have been a mistake. However, I'd like to
 think part of that has to do with me not ignoring edge cases and not having lazy
 implementations of different features as I see so many other implementations do.
 
-## Possible Differences
+### Possible Differences
 
 If you're curious about what might be different from other implementations, then
 here are some differences I've noticed.
