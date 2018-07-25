@@ -17,7 +17,7 @@
 
 ## Introduction
 
-This is an opinionated implementation of Gregory Yob's [Hunt the Wumpus](https://en.wikipedia.org/wiki/Hunt_the_Wumpus) text based 1972 game using Rust.
+This is an implementation of Gregory Yob's [Hunt the Wumpus](https://en.wikipedia.org/wiki/Hunt_the_Wumpus) text based 1972 game using Rust.
 
 ## Building and Running
 
@@ -70,13 +70,9 @@ For example:
 cargo run cheat --release
 ```
 
-## Opinionated How?
+## Variations from the Original
 
-There are many variations on this game, and this one is no different. This implementation was based on requirements as I understood them for the game and my own opinions how things ought to work. I honestly didn't spend any time playing the original game or trying to deconstruct exactly how the original did things. However, now that I am finished and spent some time to look at other implementations, I'm surprised how simplified many of them are.
-
-In fact, this might be one of the highest lines of code implementations of the game. Perhaps part of that is me attempting to model the game entities in an near object oriented way, which might have been a mistake. However, I'd like to think part of that has to do with me not ignoring edge cases and not having lazy implementations of different features as I see so many other implementations do.
-
-### Possible Differences
+There are many variations on this game, and this one is no different. This implementation was based on requirements as I understood them for the game and my own opinions how things ought to work.
 
 If you're curious about what might be different from other implementations, then here are some differences I've noticed.
 
