@@ -1,5 +1,4 @@
 #![feature(box_syntax, box_patterns)]
-#![feature(iterator_for_each)]
 // quickcheck
 #![cfg_attr(test, feature(plugin))]
 #![cfg_attr(test, plugin(quickcheck_macros))]
