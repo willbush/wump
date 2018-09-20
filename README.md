@@ -62,7 +62,7 @@ room numbers:
     the wumpus.
   - When awake it has a 75% chance of moving per turn.
   - The wumpus also has a 75% chance of moving out of the room when you "bump
-    it" or first enter its room when it is asleep. Think of this as a fight of
+    it" or first enter its room when it is asleep. Think of this as a fight or
     flight response. If the Wumpus stays to fight, then you lose.
 
 You as the player:
