@@ -19,6 +19,10 @@ This is an implementation of Gregory Yob's [Hunt the
 Wumpus](https://en.wikipedia.org/wiki/Hunt_the_Wumpus) text based 1972 game
 using Rust.
 
+After having implemented this in Haskell, I realized this implementation is
+overly complicated. See [hwump](https://github.com/willbush/hwump), which is my
+Haskell implementation in a fraction of the amount of code.
+
 ## Building and Running
 
 1. clone the repo
@@ -126,7 +130,7 @@ here are some differences I've noticed.
 
 - When the game starts all game entities are placed in non-overlapping random
   rooms on the map.
-  
+
 - The game allows replaying with the same initial random game state (or setup).
 
 - Has a [cheat mode](#cheat-mode).
