@@ -2,12 +2,12 @@
 #[path = "./player_tests.rs"]
 pub mod player_tests;
 
-use message;
-use map::{RoomNum, NUM_OF_ROOMS};
 use game::{State, MAX_TRAVERSABLE};
 use map::{adj_rooms_to, is_adj};
-use util::{print, read_line, read_sanitized_line};
+use map::{RoomNum, NUM_OF_ROOMS};
+use message;
 use std::cell::Cell;
+use util::{print, read_line, read_sanitized_line};
 
 pub const ARROW_CAPACITY: u8 = 5;
 
@@ -21,7 +21,7 @@ pub enum Action {
 pub struct Player {
     pub room: Cell<RoomNum>,
     pub arrow_count: Cell<u8>,
-    director: Box<Director>
+    director: Box<dyn Director>
 }
 
 impl Player {
@@ -105,18 +105,21 @@ fn get_rooms_to_shoot(player: RoomNum) -> Vec<RoomNum> {
 fn try_parse_rooms_from_user(player: RoomNum) -> Option<Vec<RoomNum>> {
     let mut result = vec![player];
     let line = read_line();
-    let rooms = line.split_whitespace()
+    let rooms = line
+        .split_whitespace()
         .take(MAX_TRAVERSABLE)
         .map(|r| r.parse::<RoomNum>());
 
     for r in rooms {
         match r {
-            Ok(room_num) => if room_num > 0 && room_num <= NUM_OF_ROOMS {
-                result.push(room_num);
-            } else {
-                println!("The room number {} is out of bounds.", room_num);
-                return None;
-            },
+            Ok(room_num) => {
+                if room_num > 0 && room_num <= NUM_OF_ROOMS {
+                    result.push(room_num);
+                } else {
+                    println!("The room number {} is out of bounds.", room_num);
+                    return None;
+                }
+            }
             Err(_) => {
                 println!("The given list of rooms contains one or more invalid numbers.");
                 return None;

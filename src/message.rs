@@ -57,7 +57,8 @@ impl Message {
     pub const FELL_IN_PIT: &'static str = "YYYIIIIEEEE... fell in a pit!";
     pub const WUMPUS_GOT_YOU: &'static str = "Tsk tsk tsk - wumpus got you!";
     pub const LOSE: &'static str = "Ha ha ha - you lose!";
-    pub const WIN: &'static str = "Aha! You got the Wumpus!\nHee hee hee - the Wumpus'll getcha next time!!";
+    pub const WIN: &'static str =
+        "Aha! You got the Wumpus!\nHee hee hee - the Wumpus'll getcha next time!!";
 }
 
 impl Warning {

@@ -1,7 +1,7 @@
 use super::*;
-use std::cell::RefCell;
 use map::{adj_rooms_to, rand_room};
-use rand::{thread_rng, Rng};
+use rand::{seq::SliceRandom, thread_rng};
+use std::cell::RefCell;
 
 struct DummyDirector;
 
@@ -41,7 +41,7 @@ impl Director for MockDirector {
 }
 
 struct MockFeelingOnly {
-    director: Box<Director>,
+    director: Box<dyn Director>,
     feels_like_moving: bool
 }
 
@@ -127,7 +127,7 @@ fn awake_wumpus_avoids_pits_when_moving() {
     let wumpus_room = rand_room();
     let (a, b, c) = adj_rooms_to(wumpus_room);
     let mut shuffled_adj_rooms = [a, b, c];
-    thread_rng().shuffle(&mut shuffled_adj_rooms);
+    shuffled_adj_rooms.shuffle(&mut thread_rng());
 
     let pit1_room = shuffled_adj_rooms[0];
     let pit2_room = shuffled_adj_rooms[1];

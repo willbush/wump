@@ -2,18 +2,18 @@ use quickcheck::TestResult;
 use rand::{thread_rng, Rng};
 
 use super::*;
-use player::player_tests::create_mock_directed_player;
 use bat::bat_tests::create_mock_provided_bat;
-use map::map_tests::gen_rand_valid_path_of_len;
 use bat::SuperBat;
-use pit::BottomlessPit;
-use wumpus::Wumpus;
-use player::Action;
 use map;
+use map::map_tests::gen_rand_valid_path_of_len;
+use pit::BottomlessPit;
+use player::player_tests::create_mock_directed_player;
+use player::Action;
+use wumpus::Wumpus;
 
 pub fn new_game_from(p: Player, s: State) -> Game {
     let wumpus = Rc::new(Wumpus::new(s.wumpus));
-    let hazzards: Vec<Rc<Hazzard>> = vec![
+    let hazzards: Vec<Rc<dyn Hazzard>> = vec![
         wumpus.clone(),
         Rc::new(BottomlessPit { room: s.pit1 }),
         Rc::new(BottomlessPit { room: s.pit2 }),
@@ -48,7 +48,7 @@ fn player_can_get_multi_snatched_into_pit() {
 
     let wumpus = Rc::new(Wumpus::new(wumpus_room));
 
-    let hazzards: Vec<Rc<Hazzard>> = vec![
+    let hazzards: Vec<Rc<dyn Hazzard>> = vec![
         Rc::new(BottomlessPit { room: pit1_room }),
         Rc::new(BottomlessPit { room: pit2_room }),
         Rc::new(create_mock_provided_bat(
@@ -181,9 +181,14 @@ fn get_rand_room_disjoint_from(room: RoomNum) -> RoomNum {
 }
 
 fn get_inital_state(player: RoomNum, wumpus: RoomNum) -> State {
-    State { player, wumpus, arrow_count: 5, ..Default::default() }
+    State {
+        player,
+        wumpus,
+        arrow_count: 5,
+        ..Default::default()
+    }
 }
 
-fn perform_trial(trial_count: u32, trial: &Fn()) {
+fn perform_trial(trial_count: u32, trial: &dyn Fn()) {
     (0..trial_count).for_each(|_| trial());
 }

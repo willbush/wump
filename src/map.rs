@@ -32,7 +32,7 @@ pub static MAP: [[RoomNum; 3]; NUM_OF_ROOMS] = [
     [7, 16, 18],
     [9, 17, 19],
     [11, 18, 20],
-    [13, 16, 19],
+    [13, 16, 19]
 ];
 
 /// returns true if the two given rooms are adjacent.

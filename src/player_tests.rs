@@ -2,10 +2,10 @@ use rand::{thread_rng, Rng};
 use std::cell::RefCell;
 
 use super::*;
-use map::{rand_adj_room_to, rand_room, rand_valid_adj_room_to};
-use map::map_tests::gen_rand_valid_path_of_len;
-use game::{RunResult, MAX_TRAVERSABLE};
 use game::game_test::new_game_from;
+use game::{RunResult, MAX_TRAVERSABLE};
+use map::map_tests::gen_rand_valid_path_of_len;
+use map::{rand_adj_room_to, rand_room, rand_valid_adj_room_to};
 
 struct MockDirector {
     pub actions: RefCell<Vec<Action>>
@@ -75,7 +75,9 @@ fn running_out_of_arrows_causes_loss() {
     let player = Player {
         room: Cell::new(player_room),
         arrow_count: Cell::new(1),
-        director: box MockDirector { actions: RefCell::new(actions) }
+        director: box MockDirector {
+            actions: RefCell::new(actions)
+        }
     };
 
     let initial_state = State {
@@ -98,7 +100,9 @@ pub fn create_mock_directed_player(room: RoomNum, actions: Vec<Action>) -> Playe
     Player {
         room: Cell::new(room),
         arrow_count: Cell::new(5),
-        director: box MockDirector { actions: RefCell::new(actions) }
+        director: box MockDirector {
+            actions: RefCell::new(actions)
+        }
     }
 }
 
@@ -161,6 +165,6 @@ fn valid_paths_are_not_too_crooked() {
     });
 }
 
-fn perform_trial(trial_count: u32, trial: &Fn()) {
+fn perform_trial(trial_count: u32, trial: &dyn Fn()) {
     (0..trial_count).for_each(|_| trial());
 }

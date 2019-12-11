@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["willbush <will.g.bush@gmail.com>"]
 
 [dependencies]
-rand = "0.3.16"
+rand = "0.7.2"
 
 [dev-dependencies]
-quickcheck = "0.4.1"
-quickcheck_macros = "0.4.2"
+quickcheck = "0.9.0"
+quickcheck_macros = "0.8.0"

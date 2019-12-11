@@ -1,8 +1,8 @@
-use std::collections::HashSet;
+use map::{RoomNum, MAP};
 use rand::{thread_rng, Rng};
+use std::collections::HashSet;
 use std::io;
 use std::io::Write;
-use map::{RoomNum, MAP};
 
 // Reads a line from stdin, trims it, and returns it as upper case.
 pub fn read_sanitized_line() -> String {
@@ -14,7 +14,7 @@ pub fn read_line() -> String {
     io::stdin()
         .read_line(&mut input)
         .expect("Failed to read line.");
-    input.to_string()
+    input
 }
 
 // Print without new line and flush to force it to show up.

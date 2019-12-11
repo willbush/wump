@@ -1,6 +1,6 @@
+use game::{Hazzard, RunResult, State, UpdateResult};
 use map::{is_adj, RoomNum};
 use message::Warning;
-use game::{Hazzard, RunResult, State, UpdateResult};
 
 pub struct BottomlessPit {
     pub room: RoomNum

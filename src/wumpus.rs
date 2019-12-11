@@ -2,11 +2,11 @@
 #[path = "./wumpus_tests.rs"]
 pub mod wumpus_tests;
 
-use message::Warning;
 use game::{Hazzard, RunResult, State, UpdateResult};
-use player;
 use map::{adj_rooms_to, is_adj, RoomNum};
-use rand::{thread_rng, Rng};
+use message::Warning;
+use player;
+use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::cell::Cell;
 
 trait Director {
@@ -16,7 +16,7 @@ trait Director {
 
 pub struct Wumpus {
     pub room: Cell<RoomNum>,
-    director: Box<Director>,
+    director: Box<dyn Director>,
     is_awake: Cell<bool>
 }
 
@@ -75,7 +75,7 @@ impl Director for WumpusDirector {
         let (a, b, c) = adj_rooms_to(s.wumpus);
         let mut adj_rooms = [a, b, c];
 
-        thread_rng().shuffle(&mut adj_rooms);
+        adj_rooms.shuffle(&mut thread_rng());
         *adj_rooms
             .iter()
             .find(|room| **room != s.pit1 && **room != s.pit2)

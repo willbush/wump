@@ -5,13 +5,13 @@ pub mod game_test;
 use std::fmt;
 use std::rc::Rc;
 
-use player::{Action, Player};
-use wumpus::Wumpus;
-use pit::BottomlessPit;
 use bat::SuperBat;
 use map::{gen_rand_valid_path_from, is_adj, RoomNum};
 use message::Message;
+use pit::BottomlessPit;
+use player::{Action, Player};
 use util::*;
+use wumpus::Wumpus;
 
 pub const MAX_TRAVERSABLE: usize = 5;
 
@@ -61,7 +61,7 @@ pub struct Game {
     pub pit2_room: RoomNum,
     pub bat1_room: RoomNum,
     pub bat2_room: RoomNum,
-    hazzards: Vec<Rc<Hazzard>>,
+    hazzards: Vec<Rc<dyn Hazzard>>,
     is_cheating: bool
 }
 
@@ -86,7 +86,7 @@ impl Game {
         let wumpus = Rc::new(Wumpus::new(s.wumpus));
         let wumpus_clone = Rc::clone(&wumpus);
 
-        let hazzards: Vec<Rc<Hazzard>> = vec![
+        let hazzards: Vec<Rc<dyn Hazzard>> = vec![
             wumpus_clone,
             Rc::new(BottomlessPit { room: s.pit1 }),
             Rc::new(BottomlessPit { room: s.pit2 }),

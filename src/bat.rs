@@ -2,9 +2,9 @@
 #[path = "./bat_tests.rs"]
 pub mod bat_tests;
 
+use game::{Hazzard, State, UpdateResult};
 use map::{is_adj, rand_room, RoomNum};
 use message::Warning;
-use game::{Hazzard, State, UpdateResult};
 
 pub trait RoomProvider {
     fn get_room(&self) -> RoomNum;
@@ -12,12 +12,15 @@ pub trait RoomProvider {
 
 pub struct SuperBat {
     pub room: RoomNum,
-    provider: Box<RoomProvider>
+    provider: Box<dyn RoomProvider>
 }
 
 impl SuperBat {
     pub fn new(room: RoomNum) -> Self {
-        SuperBat { room, provider: box BatRoomProvider }
+        SuperBat {
+            room,
+            provider: box BatRoomProvider
+        }
     }
 }
 

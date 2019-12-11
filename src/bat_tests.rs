@@ -1,6 +1,6 @@
 use super::*;
-use std::cell::RefCell;
 use map::RoomNum;
+use std::cell::RefCell;
 
 struct MockProvider {
     rooms: RefCell<Vec<RoomNum>>
@@ -8,7 +8,9 @@ struct MockProvider {
 
 impl MockProvider {
     fn new(rooms: Vec<RoomNum>) -> Self {
-        MockProvider { rooms: RefCell::new(rooms) }
+        MockProvider {
+            rooms: RefCell::new(rooms)
+        }
     }
 }
 
@@ -36,7 +38,10 @@ fn can_snatch_player() {
     let room = 1;
     let bat = SuperBat { room, provider };
 
-    let s = &State { player: room, ..Default::default() };
+    let s = &State {
+        player: room,
+        ..Default::default()
+    };
     assert_eq!(Some(UpdateResult::SnatchTo(first)), bat.try_update(s));
     assert_eq!(Some(UpdateResult::SnatchTo(second)), bat.try_update(s));
 }
@@ -44,5 +49,8 @@ fn can_snatch_player() {
 pub fn create_mock_provided_bat(room: RoomNum, mut snatch_order: Vec<RoomNum>) -> SuperBat {
     // reverse snatch order because they are popped to get the next room to snatch to.
     snatch_order.reverse();
-    SuperBat { room, provider: box MockProvider::new(snatch_order) }
+    SuperBat {
+        room,
+        provider: box MockProvider::new(snatch_order)
+    }
 }

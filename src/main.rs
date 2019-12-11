@@ -1,20 +1,20 @@
 #![feature(box_syntax, box_patterns)]
-// quickcheck
-#![cfg_attr(test, feature(plugin))]
-#![cfg_attr(test, plugin(quickcheck_macros))]
 
 #[cfg(test)]
 extern crate quickcheck;
 extern crate rand;
+#[cfg(test)]
+#[macro_use(quickcheck)]
+extern crate quickcheck_macros;
 
-mod game;
-mod message;
-mod util;
-mod map;
-mod player;
-mod wumpus;
 mod bat;
+mod game;
+mod map;
+mod message;
 mod pit;
+mod player;
+mod util;
+mod wumpus;
 
 use std::env;
 use std::{thread, time};
